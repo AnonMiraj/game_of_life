@@ -11,6 +11,13 @@ typedef enum { DEAD, ALIVE } State;
 
 State gameGrid[COL][ROW] = {0};
 State newGrid[COL][ROW] = {0};
+State Gol[2][9]={
+  {
+  DEAD,DEAD,DEAD,ALIVE,DEAD,DEAD,DEAD,DEAD,DEAD
+  },{
+  DEAD,DEAD,ALIVE,ALIVE,DEAD,DEAD,DEAD,DEAD,DEAD
+  }
+};
 
 void gen() {
 
@@ -36,21 +43,7 @@ void gen() {
         }
       }
 
-      switch (alive_count) {
-      case 0:
-      case 1:
-        newGrid[i][j] = DEAD;
-        break;
-      case 2:
-      case 3:
-        if (gameGrid[i][j] == DEAD && alive_count == 3) {
-          newGrid[i][j] = ALIVE;
-        }
-        break;
-      default:
-        newGrid[i][j] = DEAD;
-        break;
-      }
+      newGrid[i][j] = Gol[gameGrid[i][j]][alive_count];
     }
   }
   for (size_t i = 0; i < ROW; i++) {
@@ -77,7 +70,7 @@ int Floor(double x) {
   }
 }
 int main() {
-  const int screenWidth = 800;
+  const int screenWidth = 450;
   const int screenHeight = 450;
 
   State Pen = ALIVE;
@@ -99,10 +92,10 @@ int main() {
       Vector2 delta = GetMouseDelta();
       delta = Vector2Scale(delta, -1.0f / camera.zoom);
 
-      if (camera.target.y + delta.y +screenHeight *.5 < COL * CELLSIZE * 0.5 && camera.target.y + delta.y +screenHeight *.5> -COL * CELLSIZE * 0.5) {
+      if (camera.target.y + delta.y  < COL * CELLSIZE * 0.5 && camera.target.y + delta.y > -COL * CELLSIZE * 0.5) {
         camera.target.y += delta.y;
       }
-      if (camera.target.x + delta.x +screenWidth*.5 < ROW * CELLSIZE * 0.5 && camera.target.x + delta.x +screenHeight *0.5 > -ROW * CELLSIZE * 0.5) {
+      if (camera.target.x + delta.x< ROW * CELLSIZE * 0.5 && camera.target.x + delta.x  > -ROW * CELLSIZE * 0.5) {
         camera.target.x += delta.x;
       }
 
