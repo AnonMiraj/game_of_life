@@ -4,21 +4,37 @@
 #include <stdio.h>
 #include <time.h>
 
-#define COL 50
-#define ROW 50
+#define COL 500
+#define ROW 500
 #define CELLSIZE 25
+#define screenWidth 450
+#define screenHeight 450
+
 typedef enum { DEAD, ALIVE } State;
 
 State gameGrid[COL][ROW] = {0};
 State newGrid[COL][ROW] = {0};
-State Gol[2][9]={
-  {
-  DEAD,DEAD,DEAD,ALIVE,DEAD,DEAD,DEAD,DEAD,DEAD
-  },{
-  DEAD,DEAD,ALIVE,ALIVE,DEAD,DEAD,DEAD,DEAD,DEAD
-  }
+State Gol[2][9] = {{DEAD, DEAD, DEAD, ALIVE, DEAD, DEAD, DEAD, DEAD, DEAD},
+                   {DEAD, DEAD, ALIVE, ALIVE, DEAD, DEAD, DEAD, DEAD, DEAD}};
+
+State Seeds[2][9] = {
+    {DEAD, DEAD, ALIVE, DEAD, DEAD, DEAD, DEAD, DEAD, DEAD},
+    {DEAD, DEAD, DEAD, DEAD, DEAD, DEAD, DEAD, DEAD, DEAD},
 };
 
+State Som[2][9] = {
+    {DEAD, DEAD, ALIVE, ALIVE, DEAD, DEAD, DEAD, DEAD, DEAD},
+    {DEAD, DEAD, DEAD, ALIVE, DEAD, DEAD, DEAD, DEAD, DEAD},
+};
+
+State Maze[2][9] = {
+    {DEAD, DEAD, DEAD, ALIVE, DEAD, DEAD, DEAD, DEAD, DEAD},
+    {DEAD, ALIVE, ALIVE, ALIVE, ALIVE, ALIVE, DEAD, DEAD, DEAD}};
+State CoolEvil[2][9] = {
+    {DEAD, ALIVE, ALIVE, ALIVE, ALIVE, ALIVE, DEAD, DEAD, DEAD},
+    {DEAD, DEAD, DEAD, ALIVE, DEAD, DEAD, DEAD, DEAD, DEAD}};
+
+void *gamemode[] = {&Gol, &Seeds};
 void gen() {
 
   for (size_t i = 0; i < ROW; i++) {
@@ -43,7 +59,7 @@ void gen() {
         }
       }
 
-      newGrid[i][j] = Gol[gameGrid[i][j]][alive_count];
+      newGrid[i][j] = CoolEvil[gameGrid[i][j]][alive_count];
     }
   }
   for (size_t i = 0; i < ROW; i++) {
@@ -70,14 +86,13 @@ int Floor(double x) {
   }
 }
 int main() {
-  const int screenWidth = 450;
-  const int screenHeight = 450;
 
   State Pen = ALIVE;
 
   InitWindow(screenWidth, screenHeight, "Game of Life");
   init_grid(false);
 
+  gameGrid[250][250] = ALIVE;
   double penTime = 0;
   Camera2D camera = {0};
   camera.zoom = 1.0f;
@@ -92,10 +107,12 @@ int main() {
       Vector2 delta = GetMouseDelta();
       delta = Vector2Scale(delta, -1.0f / camera.zoom);
 
-      if (camera.target.y + delta.y  < COL * CELLSIZE * 0.5 && camera.target.y + delta.y > -COL * CELLSIZE * 0.5) {
+      if (camera.target.y + delta.y + 450 < COL * CELLSIZE * 0.5 &&
+          camera.target.y + delta.y > -COL * CELLSIZE * 0.5) {
         camera.target.y += delta.y;
       }
-      if (camera.target.x + delta.x< ROW * CELLSIZE * 0.5 && camera.target.x + delta.x  > -ROW * CELLSIZE * 0.5) {
+      if (camera.target.x + delta.x + 450 < ROW * CELLSIZE * 0.5 &&
+          camera.target.x + delta.x > -ROW * CELLSIZE * 0.5) {
         camera.target.x += delta.x;
       }
 
@@ -116,22 +133,6 @@ int main() {
       } else {
         printf("OUT OF BOUNDS\n");
       }
-    }
-    if (IsKeyPressed(KEY_ENTER)) {
-      penTime = GetTime();
-      Pen = !Pen;
-    }
-    if (IsKeyPressed(KEY_SPACE) || IsKeyPressedRepeat(KEY_SPACE)) {
-      gen();
-    }
-    if (IsKeyPressed(KEY_R)) {
-
-      init_grid(true);
-    }
-
-    if (IsKeyPressed(KEY_C)) {
-
-      init_grid(false);
     }
     // Zoom based on mouse wheel
     float wheel = GetMouseWheelMove();
@@ -155,6 +156,23 @@ int main() {
         camera.zoom = zoomIncrement;
     }
 
+    if (IsKeyPressed(KEY_ENTER)) {
+      penTime = GetTime();
+      Pen = !Pen;
+    }
+    if (IsKeyPressed(KEY_SPACE) || IsKeyPressedRepeat(KEY_SPACE)) {
+      gen();
+    }
+    if (IsKeyPressed(KEY_R)) {
+
+      init_grid(true);
+    }
+
+    if (IsKeyPressed(KEY_C)) {
+
+      init_grid(false);
+    }
+
     // Draw
     BeginDrawing();
     ClearBackground(RAYWHITE);
@@ -166,12 +184,12 @@ int main() {
 
         switch (gameGrid[i + COL / 2][j + ROW / 2]) {
         case DEAD:
-          DrawRectangle(i * CELLSIZE, j * CELLSIZE, CELLSIZE * 0.95,
-                        CELLSIZE * 0.95, WHITE);
+          DrawRectangle(i * CELLSIZE, j * CELLSIZE, CELLSIZE * 1, CELLSIZE * 1,
+                        WHITE);
           break;
         case ALIVE:
-          DrawRectangle(i * CELLSIZE, j * CELLSIZE, CELLSIZE * 0.95,
-                        CELLSIZE * 0.95, BLACK);
+          DrawRectangle(i * CELLSIZE, j * CELLSIZE, CELLSIZE * 1, CELLSIZE * 1,
+                        BLACK);
 
           break;
         }
@@ -180,9 +198,13 @@ int main() {
 
     Vector2 mouseWorldPos = GetScreenToWorld2D(GetMousePosition(), camera);
 
-    DrawRectangle((Floor(mouseWorldPos.x / CELLSIZE)) * CELLSIZE,
-                  (Floor(mouseWorldPos.y / CELLSIZE)) * CELLSIZE,
-                  CELLSIZE * 0.95, CELLSIZE * 0.95, GRAY);
+    float x = Floor(mouseWorldPos.x / CELLSIZE);
+    float y = Floor(mouseWorldPos.y / CELLSIZE);
+
+    if (x >= -COL / 2.f && x < COL / 2.f && y >= -ROW / 2.f && y < ROW / 2.f) {
+      DrawRectangle(x * CELLSIZE, y * CELLSIZE, CELLSIZE * 1, CELLSIZE * 1,
+                    GRAY);
+    }
 
     EndMode2D();
     // DrawText("Mouse right button drag to move\n\nMouse left button toggle
