@@ -1,23 +1,19 @@
 #include "raylib.h"
 #include "raymath.h"
+#include <stdbool.h>
 #include <stdio.h>
 #include <time.h>
 
 #define COL 50
 #define ROW 50
 #define CELLSIZE 25
-typedef enum {
-  DEAD,
-  ALIVE,
-  DYING,
-  BORN,
+typedef enum { DEAD, ALIVE } State;
 
-} State;
+State gameGrid[COL][ROW] = {0};
+State newGrid[COL][ROW] = {0};
 
-State gameGrid[COL][ROW];
 void gen() {
 
-  State newGrid[COL][ROW] = {0};
   for (size_t i = 0; i < ROW; i++) {
     for (size_t j = 0; j < COL; j++) {
       newGrid[i][j] = gameGrid[i][j];
@@ -63,12 +59,12 @@ void gen() {
     }
   }
 }
-void rand_grid() {
+void init_grid(bool rand) {
   SetRandomSeed(time(NULL));
   for (size_t i = 0; i < ROW; i++) {
     for (size_t j = 0; j < COL; j++) {
 
-      gameGrid[i][j] = (State)(GetRandomValue(0, 1));
+      gameGrid[i][j] = rand ? (State)(GetRandomValue(0, 1)) : 0;
     }
   }
 }
@@ -85,9 +81,9 @@ int main() {
   const int screenHeight = 450;
 
   State Pen = ALIVE;
-  // rand_grid();
 
   InitWindow(screenWidth, screenHeight, "Game of Life");
+  init_grid(false);
 
   double penTime = 0;
   Camera2D camera = {0};
@@ -103,7 +99,15 @@ int main() {
       Vector2 delta = GetMouseDelta();
       delta = Vector2Scale(delta, -1.0f / camera.zoom);
 
-      camera.target = Vector2Add(camera.target, delta);
+      if (camera.target.y + delta.y +screenHeight *.5 < COL * CELLSIZE * 0.5 && camera.target.y + delta.y +screenHeight *.5> -COL * CELLSIZE * 0.5) {
+        camera.target.y += delta.y;
+      }
+      if (camera.target.x + delta.x +screenWidth*.5 < ROW * CELLSIZE * 0.5 && camera.target.x + delta.x +screenHeight *0.5 > -ROW * CELLSIZE * 0.5) {
+        camera.target.x += delta.x;
+      }
+
+      printf("x = %f\n", camera.target.x);
+      printf("y = %f\n", camera.target.y);
     }
     if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
 
@@ -111,9 +115,11 @@ int main() {
 
       int x = Floor(mouseWorldPos.x / CELLSIZE);
       int y = Floor(mouseWorldPos.y / CELLSIZE);
+
       if (x >= -COL / 2 && x < COL / 2 && y >= -ROW / 2 && y < ROW / 2) {
 
         gameGrid[x + COL / 2][y + ROW / 2] = Pen;
+
       } else {
         printf("OUT OF BOUNDS\n");
       }
@@ -124,6 +130,15 @@ int main() {
     }
     if (IsKeyPressed(KEY_SPACE) || IsKeyPressedRepeat(KEY_SPACE)) {
       gen();
+    }
+    if (IsKeyPressed(KEY_R)) {
+
+      init_grid(true);
+    }
+
+    if (IsKeyPressed(KEY_C)) {
+
+      init_grid(false);
     }
     // Zoom based on mouse wheel
     float wheel = GetMouseWheelMove();
@@ -152,26 +167,29 @@ int main() {
     ClearBackground(RAYWHITE);
 
     BeginMode2D(camera);
-
     for (int i = -COL / 2; i < COL / 2; i++) {
 
       for (int j = -ROW / 2; j < ROW / 2; j++) {
 
         switch (gameGrid[i + COL / 2][j + ROW / 2]) {
         case DEAD:
-        case DYING:
           DrawRectangle(i * CELLSIZE, j * CELLSIZE, CELLSIZE * 0.95,
                         CELLSIZE * 0.95, WHITE);
           break;
         case ALIVE:
-        case BORN:
-
           DrawRectangle(i * CELLSIZE, j * CELLSIZE, CELLSIZE * 0.95,
-                        CELLSIZE * 0.95, DARKGRAY);
+                        CELLSIZE * 0.95, BLACK);
+
           break;
         }
       }
     }
+
+    Vector2 mouseWorldPos = GetScreenToWorld2D(GetMousePosition(), camera);
+
+    DrawRectangle((Floor(mouseWorldPos.x / CELLSIZE)) * CELLSIZE,
+                  (Floor(mouseWorldPos.y / CELLSIZE)) * CELLSIZE,
+                  CELLSIZE * 0.95, CELLSIZE * 0.95, GRAY);
 
     EndMode2D();
     // DrawText("Mouse right button drag to move\n\nMouse left button toggle
@@ -180,9 +198,9 @@ int main() {
     if (GetTime() - penTime <= 0.3) {
       if ((bool)Pen) {
 
-        DrawText("Switched pen to Dead", 10, 10, 20, PURPLE);
-      } else
         DrawText("Switched pen to Alive", 10, 10, 20, PURPLE);
+      } else
+        DrawText("Switched pen to Dead", 10, 10, 20, PURPLE);
     }
     EndDrawing();
   }
