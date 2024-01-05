@@ -2,8 +2,12 @@
 #include "raymath.h"
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
+#define MYRED                                                                  \
+  CLITERAL(Color) { 255, 0, 0, 255 }
 #define COL 500
 #define ROW 500
 #define CELLSIZE 25
@@ -11,9 +15,15 @@
 #define screenHeight 450
 
 typedef enum { DEAD, ALIVE } State;
+typedef struct {
+  State state : 1;
+  Color color;
 
-State gameGrid[COL][ROW] = {0};
-State newGrid[COL][ROW] = {0};
+} Cell;
+
+Cell gameGrid[COL][ROW] = {0};
+Cell newGrid[COL][ROW] = {0};
+
 State Gol[2][9] = {{DEAD, DEAD, DEAD, ALIVE, DEAD, DEAD, DEAD, DEAD, DEAD},
                    {DEAD, DEAD, ALIVE, ALIVE, DEAD, DEAD, DEAD, DEAD, DEAD}};
 
@@ -27,6 +37,10 @@ State Som[2][9] = {
     {DEAD, DEAD, DEAD, ALIVE, DEAD, DEAD, DEAD, DEAD, DEAD},
 };
 
+State Rule30[2][9] = {
+    {DEAD, ALIVE, ALIVE, ALIVE, ALIVE, DEAD, DEAD, DEAD, DEAD},
+    {DEAD, ALIVE, DEAD, DEAD, DEAD, DEAD, DEAD, DEAD, DEAD},
+};
 State Maze[2][9] = {
     {DEAD, DEAD, DEAD, ALIVE, DEAD, DEAD, DEAD, DEAD, DEAD},
     {DEAD, ALIVE, ALIVE, ALIVE, ALIVE, ALIVE, DEAD, DEAD, DEAD}};
@@ -35,45 +49,58 @@ State CoolEvil[2][9] = {
     {DEAD, DEAD, DEAD, ALIVE, DEAD, DEAD, DEAD, DEAD, DEAD}};
 
 void *gamemode[] = {&Gol, &Seeds};
+int countNeighbors(int i, int j) {
+  int alive_count = 0;
+
+  for (int k = -1; k <= 1; k++) {
+    for (int l = -1; l <= 1; l++) {
+      if (k == 0 && l == 0)
+        continue;
+      int row = (i + k + ROW) % ROW;
+      int col = (j + l + COL) % COL;
+      if (gameGrid[row][col].state == ALIVE) {
+        alive_count++;
+      }
+    }
+  }
+
+  return alive_count;
+}
 void gen() {
 
-  for (size_t i = 0; i < ROW; i++) {
-    for (size_t j = 0; j < COL; j++) {
-      newGrid[i][j] = gameGrid[i][j];
-    }
-  }
+  memcpy(newGrid, gameGrid, sizeof(Cell) * COL * ROW);
 
   for (size_t i = 0; i < ROW; i++) {
     for (size_t j = 0; j < COL; j++) {
-      int alive_count = 0;
 
-      for (int k = -1; k <= 1; k++) {
-        for (int l = -1; l <= 1; l++) {
-          if (k == 0 && l == 0)
-            continue;
-          int row = (i + k + ROW) % ROW;
-          int col = (j + l + COL) % COL;
-          if (gameGrid[row][col] == ALIVE) {
-            alive_count++;
-          }
+      int alive_count = countNeighbors(i, j);
+
+      if (newGrid[i][j].state == ALIVE &&
+          newGrid[i][j].state == Gol[gameGrid[i][j].state][alive_count]) {
+
+        if (newGrid[i][j].color.b != 255) {
+
+          newGrid[i][j].color.b += 5;
         }
-      }
+        if (newGrid[i][j].color.r != 0) {
 
-      newGrid[i][j] = CoolEvil[gameGrid[i][j]][alive_count];
+          newGrid[i][j].color.r -= 5;
+        }
+      } else {
+        newGrid[i][j].color = MYRED;
+      }
+      newGrid[i][j].state = Gol[gameGrid[i][j].state][alive_count];
     }
   }
-  for (size_t i = 0; i < ROW; i++) {
-    for (size_t j = 0; j < COL; j++) {
-      gameGrid[i][j] = newGrid[i][j];
-    }
-  }
+  memcpy(gameGrid, newGrid, sizeof(Cell) * COL * ROW);
 }
 void init_grid(bool rand) {
   SetRandomSeed(time(NULL));
   for (size_t i = 0; i < ROW; i++) {
     for (size_t j = 0; j < COL; j++) {
 
-      gameGrid[i][j] = rand ? (State)(GetRandomValue(0, 1)) : 0;
+      gameGrid[i][j].state = rand ? (State)(GetRandomValue(0, 1)) : 0;
+      gameGrid[i][j].color = MYRED;
     }
   }
 }
@@ -92,7 +119,7 @@ int main() {
   InitWindow(screenWidth, screenHeight, "Game of Life");
   init_grid(false);
 
-  gameGrid[250][250] = ALIVE;
+  gameGrid[250][250].state = ALIVE;
   double penTime = 0;
   Camera2D camera = {0};
   camera.zoom = 1.0f;
@@ -116,8 +143,8 @@ int main() {
         camera.target.x += delta.x;
       }
 
-      printf("x = %f\n", camera.target.x);
-      printf("y = %f\n", camera.target.y);
+      // printf("x = %f\n", camera.target.x);
+      // printf("y = %f\n", camera.target.y);
     }
     if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
 
@@ -128,10 +155,8 @@ int main() {
 
       if (x >= -COL / 2 && x < COL / 2 && y >= -ROW / 2 && y < ROW / 2) {
 
-        gameGrid[x + COL / 2][y + ROW / 2] = Pen;
-
-      } else {
-        printf("OUT OF BOUNDS\n");
+        gameGrid[x + COL / 2][y + ROW / 2].state = Pen;
+        gameGrid[x + COL / 2][y + ROW / 2].color = MYRED;
       }
     }
     // Zoom based on mouse wheel
@@ -175,21 +200,21 @@ int main() {
 
     // Draw
     BeginDrawing();
-    ClearBackground(RAYWHITE);
+    ClearBackground(DARKGRAY);
 
     BeginMode2D(camera);
     for (int i = -COL / 2; i < COL / 2; i++) {
 
       for (int j = -ROW / 2; j < ROW / 2; j++) {
 
-        switch (gameGrid[i + COL / 2][j + ROW / 2]) {
+        switch (gameGrid[i + COL / 2][j + ROW / 2].state) {
         case DEAD:
           DrawRectangle(i * CELLSIZE, j * CELLSIZE, CELLSIZE * 1, CELLSIZE * 1,
                         WHITE);
           break;
         case ALIVE:
           DrawRectangle(i * CELLSIZE, j * CELLSIZE, CELLSIZE * 1, CELLSIZE * 1,
-                        BLACK);
+                        gameGrid[i + COL / 2][j + ROW / 2].color);
 
           break;
         }
