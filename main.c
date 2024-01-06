@@ -11,8 +11,10 @@
 #define COL 500
 #define ROW 500
 #define CELLSIZE 25
+
 #define screenWidth 450
 #define screenHeight 450
+short automaton_index=0;
 
 typedef enum { DEAD, ALIVE } State;
 typedef struct {
@@ -23,6 +25,8 @@ typedef struct {
 
 Cell gameGrid[COL][ROW] = {0};
 Cell newGrid[COL][ROW] = {0};
+
+typedef State cur[9];
 
 State Gol[2][9] = {{DEAD, DEAD, DEAD, ALIVE, DEAD, DEAD, DEAD, DEAD, DEAD},
                    {DEAD, DEAD, ALIVE, ALIVE, DEAD, DEAD, DEAD, DEAD, DEAD}};
@@ -48,6 +52,19 @@ State CoolEvil[2][9] = {
     {DEAD, ALIVE, ALIVE, ALIVE, ALIVE, ALIVE, DEAD, DEAD, DEAD},
     {DEAD, DEAD, DEAD, ALIVE, DEAD, DEAD, DEAD, DEAD, DEAD}};
 
+typedef void(*fun_ptr);
+
+typedef struct {
+  char *arg;
+  fun_ptr ptr;
+} Type;
+
+#define TYPE_SIZE 6
+Type type[TYPE_SIZE] = {
+    {"gol", &Gol},   {"seeds", &Seeds},   {"som", &Som},
+    {"maze", &Maze}, {"Rule30", &Rule30}, {"cool evil", &CoolEvil},
+};
+
 void *gamemode[] = {&Gol, &Seeds};
 int countNeighbors(int i, int j) {
   int alive_count = 0;
@@ -68,6 +85,7 @@ int countNeighbors(int i, int j) {
 }
 void gen() {
 
+  cur *automaton= type[automaton_index].ptr;
   memcpy(newGrid, gameGrid, sizeof(Cell) * COL * ROW);
 
   for (size_t i = 0; i < ROW; i++) {
@@ -76,20 +94,20 @@ void gen() {
       int alive_count = countNeighbors(i, j);
 
       if (newGrid[i][j].state == ALIVE &&
-          newGrid[i][j].state == Gol[gameGrid[i][j].state][alive_count]) {
+          newGrid[i][j].state == automaton[gameGrid[i][j].state][alive_count]) {
 
         if (newGrid[i][j].color.b != 255) {
 
-          newGrid[i][j].color.b += 5;
+          newGrid[i][j].color.b += 3;
         }
         if (newGrid[i][j].color.r != 0) {
 
-          newGrid[i][j].color.r -= 5;
+          newGrid[i][j].color.r -= 3;
         }
       } else {
         newGrid[i][j].color = MYRED;
       }
-      newGrid[i][j].state = Gol[gameGrid[i][j].state][alive_count];
+      newGrid[i][j].state = automaton[gameGrid[i][j].state][alive_count];
     }
   }
   memcpy(gameGrid, newGrid, sizeof(Cell) * COL * ROW);
@@ -180,7 +198,6 @@ int main() {
       if (camera.zoom < zoomIncrement)
         camera.zoom = zoomIncrement;
     }
-
     if (IsKeyPressed(KEY_ENTER)) {
       penTime = GetTime();
       Pen = !Pen;
@@ -197,7 +214,17 @@ int main() {
 
       init_grid(false);
     }
+    if (IsKeyPressed(KEY_J))
+    {
+      automaton_index=(automaton_index+TYPE_SIZE-1)%TYPE_SIZE;
 
+    }
+    if (IsKeyPressed(KEY_K))
+    {
+
+      automaton_index+=1;
+      automaton_index%=TYPE_SIZE;
+    }
     // Draw
     BeginDrawing();
     ClearBackground(DARKGRAY);
@@ -242,6 +269,8 @@ int main() {
       } else
         DrawText("Switched pen to Dead", 10, 10, 20, PURPLE);
     }
+        DrawText(TextFormat("automaton: %s", type[automaton_index].arg), 10, GetScreenHeight()*.9f, 20, PURPLE);
+
     EndDrawing();
   }
 
