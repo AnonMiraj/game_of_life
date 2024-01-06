@@ -23,8 +23,8 @@ typedef struct {
 
 } Cell;
 
-Cell gameGrid[WIDTH][HEIGHT] = {0};
-Cell newGrid[WIDTH][HEIGHT] = {0};
+Cell gameGrid[WIDTH * HEIGHT] = {0};
+// Cell newGrid[WIDTH * HEIGHT] = {0};
 
 typedef State cur[9];
 
@@ -41,7 +41,7 @@ State Som[2][9] = {
     {DEAD, DEAD, DEAD, ALIVE, DEAD, DEAD, DEAD, DEAD, DEAD},
 };
 
-State Rule30[2][9] = {
+State Cool[2][9] = {
     {DEAD, ALIVE, ALIVE, ALIVE, ALIVE, DEAD, DEAD, DEAD, DEAD},
     {DEAD, ALIVE, DEAD, DEAD, DEAD, DEAD, DEAD, DEAD, DEAD},
 };
@@ -63,6 +63,7 @@ State MiceMazectric[2][9] = {
 State CoolEvil[2][9] = {
     {DEAD, ALIVE, ALIVE, ALIVE, ALIVE, ALIVE, DEAD, DEAD, DEAD},
     {DEAD, DEAD, DEAD, ALIVE, DEAD, DEAD, DEAD, DEAD, DEAD}};
+
 State DayNight[2][9] = {
     {DEAD, DEAD, DEAD, ALIVE, DEAD, DEAD, ALIVE, ALIVE, ALIVE},
     {DEAD, DEAD, DEAD, ALIVE, ALIVE, DEAD, ALIVE, ALIVE, ALIVE},
@@ -82,7 +83,7 @@ Type type[TYPE_SIZE] = {
     {"Mice Maze", &MiceMaze},
     {"Mazectric", &Mazectric},
     {"Mice Mazectric", &MiceMazectric},
-    {"Rule 30", &Rule30},
+    {"Cool rule", &Cool},
     {"Day and Night", &DayNight},
     {"cool evil", &CoolEvil},
 };
@@ -96,7 +97,7 @@ int countNeighbors(int i, int j) {
         continue;
       int row = (i + k + HEIGHT) % HEIGHT;
       int col = (j + l + WIDTH) % WIDTH;
-      if (gameGrid[row][col].state == ALIVE) {
+      if (gameGrid[row * WIDTH + col].state == ALIVE) {
         alive_count++;
       }
     }
@@ -105,32 +106,34 @@ int countNeighbors(int i, int j) {
   return alive_count;
 }
 
-
 void gen() {
   cur *automaton = type[automaton_index].ptr;
+  Cell *newGrid = calloc(HEIGHT * WIDTH, sizeof(Cell));
+
   memcpy(newGrid, gameGrid, sizeof(Cell) * WIDTH * HEIGHT);
 
   for (size_t i = 0; i < WIDTH; i++) {
     for (size_t j = 0; j < HEIGHT; j++) {
 
-
       int alive_count = countNeighbors(i, j);
 
-      if (newGrid[i][j].state == ALIVE &&
-          newGrid[i][j].state == automaton[gameGrid[i][j].state][alive_count]) {
+      if (newGrid[i * WIDTH + j].state == ALIVE &&
+          newGrid[i * WIDTH + j].state ==
+              automaton[gameGrid[i * WIDTH + j].state][alive_count]) {
 
-        if (newGrid[i][j].color.b != 255) {
+        if (newGrid[i * WIDTH + j].color.b != 255) {
 
-          newGrid[i][j].color.b += 3;
+          newGrid[i * WIDTH + j].color.b += 3;
         }
-        if (newGrid[i][j].color.r != 0) {
+        if (newGrid[i * WIDTH + j].color.r != 0) {
 
-          newGrid[i][j].color.r -= 3;
+          newGrid[i * WIDTH + j].color.r -= 3;
         }
       } else {
-        newGrid[i][j].color = MYRED;
+        newGrid[i * WIDTH + j].color = MYRED;
       }
-      newGrid[i][j].state = automaton[gameGrid[i][j].state][alive_count];
+      newGrid[i * WIDTH + j].state =
+          automaton[gameGrid[i * WIDTH + j].state][alive_count];
     }
   }
   memcpy(gameGrid, newGrid, sizeof(Cell) * WIDTH * HEIGHT);
@@ -141,8 +144,8 @@ void init_grid(bool rand) {
   for (size_t i = 0; i < WIDTH; i++) {
     for (size_t j = 0; j < HEIGHT; j++) {
 
-      gameGrid[i][j].state = rand ? (State)(GetRandomValue(0, 1)) : 0;
-      gameGrid[i][j].color = MYRED;
+      gameGrid[i * WIDTH + j].state = rand ? (State)(GetRandomValue(0, 1)) : 0;
+      gameGrid[i * WIDTH + j].color = MYRED;
     }
   }
 }
@@ -196,10 +199,11 @@ int main() {
       int x = Floor(mouseWorldPos.x / CELLSIZE);
       int y = Floor(mouseWorldPos.y / CELLSIZE);
 
-      if (x >= -WIDTH / 2 && x < WIDTH / 2 && y >= -HEIGHT / 2 && y < HEIGHT / 2) {
+      if (x >= -WIDTH / 2 && x < WIDTH / 2 && y >= -HEIGHT / 2 &&
+          y < HEIGHT / 2) {
 
-        gameGrid[x + WIDTH / 2][y + HEIGHT / 2].state = Pen;
-        gameGrid[x + WIDTH / 2][y + HEIGHT / 2].color = MYRED;
+        gameGrid[(x + WIDTH / 2) * WIDTH + y + HEIGHT / 2].state = Pen;
+        gameGrid[(x + WIDTH / 2) * WIDTH + y + HEIGHT / 2].color = MYRED;
       }
     }
 
@@ -248,7 +252,6 @@ int main() {
 
       automaton_index += 1;
       automaton_index %= TYPE_SIZE;
-
     }
     // Draw
     BeginDrawing();
@@ -260,15 +263,16 @@ int main() {
 
       for (int j = -HEIGHT / 2; j < HEIGHT / 2; j++) {
 
-        switch (gameGrid[i + WIDTH / 2][j + HEIGHT / 2].state) {
+        switch (gameGrid[(i + WIDTH / 2) * WIDTH + j + HEIGHT / 2].state) {
 
         case DEAD:
           DrawRectangle(i * CELLSIZE, j * CELLSIZE, CELLSIZE * 1, CELLSIZE * 1,
                         WHITE);
           break;
         case ALIVE:
-          DrawRectangle(i * CELLSIZE, j * CELLSIZE, CELLSIZE * 1, CELLSIZE * 1,
-                        gameGrid[i + WIDTH / 2][j + HEIGHT / 2].color);
+          DrawRectangle(
+              i * CELLSIZE, j * CELLSIZE, CELLSIZE * 1, CELLSIZE * 1,
+              gameGrid[(i + WIDTH / 2) * WIDTH + j + HEIGHT / 2].color);
 
           break;
         }
@@ -280,7 +284,8 @@ int main() {
     float x = Floor(mouseWorldPos.x / CELLSIZE);
     float y = Floor(mouseWorldPos.y / CELLSIZE);
 
-    if (x >= -WIDTH / 2.f && x < WIDTH / 2.f && y >= -HEIGHT / 2.f && y < HEIGHT / 2.f) {
+    if (x >= -WIDTH / 2.f && x < WIDTH / 2.f && y >= -HEIGHT / 2.f &&
+        y < HEIGHT / 2.f) {
       DrawRectangle(x * CELLSIZE, y * CELLSIZE, CELLSIZE * 1, CELLSIZE * 1,
                     GRAY);
     }
