@@ -8,6 +8,6 @@ a small implementation of Conway's game of life because I was bored
       
 ~~- [ ] try and represent each cell in a 1-bit register~~ (very hard kinda)
 - [ ] optimize the logic more  
-- [ ] add more cool Cellular automata
+- [x] add more cool Cellular automata
 - [x] add a way to change between the rules and maybe even a way to set your own
 

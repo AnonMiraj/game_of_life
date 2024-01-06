@@ -8,13 +8,13 @@
 
 #define MYRED                                                                  \
   CLITERAL(Color) { 255, 0, 0, 255 }
-#define COL 500
-#define ROW 500
+#define WIDTH 500
+#define HEIGHT 500
 #define CELLSIZE 25
 
 #define screenWidth 450
 #define screenHeight 450
-short automaton_index=0;
+short automaton_index = 0;
 
 typedef enum { DEAD, ALIVE } State;
 typedef struct {
@@ -23,8 +23,8 @@ typedef struct {
 
 } Cell;
 
-Cell gameGrid[COL][ROW] = {0};
-Cell newGrid[COL][ROW] = {0};
+Cell gameGrid[WIDTH][HEIGHT] = {0};
+Cell newGrid[WIDTH][HEIGHT] = {0};
 
 typedef State cur[9];
 
@@ -48,24 +48,42 @@ State Rule30[2][9] = {
 State Maze[2][9] = {
     {DEAD, DEAD, DEAD, ALIVE, DEAD, DEAD, DEAD, DEAD, DEAD},
     {DEAD, ALIVE, ALIVE, ALIVE, ALIVE, ALIVE, DEAD, DEAD, DEAD}};
+State MiceMaze[2][9] = {
+    {DEAD, DEAD, DEAD, ALIVE, DEAD, DEAD, DEAD, ALIVE, DEAD},
+    {DEAD, ALIVE, ALIVE, ALIVE, ALIVE, ALIVE, DEAD, DEAD, DEAD}};
+State Mazectric[2][9] = {
+    {DEAD, DEAD, DEAD, ALIVE, DEAD, DEAD, DEAD, DEAD, DEAD},
+    {DEAD, ALIVE, ALIVE, ALIVE, ALIVE, DEAD, DEAD, DEAD, DEAD}};
+State MiceMazectric[2][9] = {
+    {DEAD, DEAD, DEAD, ALIVE, DEAD, DEAD, DEAD, ALIVE, DEAD},
+    {DEAD, ALIVE, ALIVE, ALIVE, ALIVE, DEAD, DEAD, DEAD, DEAD}};
 State CoolEvil[2][9] = {
     {DEAD, ALIVE, ALIVE, ALIVE, ALIVE, ALIVE, DEAD, DEAD, DEAD},
     {DEAD, DEAD, DEAD, ALIVE, DEAD, DEAD, DEAD, DEAD, DEAD}};
-
-typedef void(*fun_ptr);
+State DayNight[2][9] = {
+    {DEAD, DEAD, DEAD, ALIVE, DEAD, DEAD, ALIVE, ALIVE, ALIVE},
+    {DEAD, DEAD, DEAD, ALIVE, ALIVE, DEAD, ALIVE, ALIVE, ALIVE},
+};
 
 typedef struct {
   char *arg;
-  fun_ptr ptr;
+  void *ptr;
 } Type;
 
-#define TYPE_SIZE 6
+#define TYPE_SIZE 10
 Type type[TYPE_SIZE] = {
-    {"gol", &Gol},   {"seeds", &Seeds},   {"som", &Som},
-    {"maze", &Maze}, {"Rule30", &Rule30}, {"cool evil", &CoolEvil},
+    {"Game of life", &Gol},
+    {"Seeds", &Seeds},
+    {"test", &Som},
+    {"Maze", &Maze},
+    {"Mice Maze", &MiceMaze},
+    {"Mazectric", &Mazectric},
+    {"Mice Mazectric", &MiceMazectric},
+    {"Rule 30", &Rule30},
+    {"Day and Night", &DayNight},
+    {"cool evil", &CoolEvil},
 };
 
-void *gamemode[] = {&Gol, &Seeds};
 int countNeighbors(int i, int j) {
   int alive_count = 0;
 
@@ -73,8 +91,8 @@ int countNeighbors(int i, int j) {
     for (int l = -1; l <= 1; l++) {
       if (k == 0 && l == 0)
         continue;
-      int row = (i + k + ROW) % ROW;
-      int col = (j + l + COL) % COL;
+      int row = (i + k + HEIGHT) % HEIGHT;
+      int col = (j + l + WIDTH) % WIDTH;
       if (gameGrid[row][col].state == ALIVE) {
         alive_count++;
       }
@@ -85,11 +103,11 @@ int countNeighbors(int i, int j) {
 }
 void gen() {
 
-  cur *automaton= type[automaton_index].ptr;
-  memcpy(newGrid, gameGrid, sizeof(Cell) * COL * ROW);
+  cur *automaton = type[automaton_index].ptr;
+  memcpy(newGrid, gameGrid, sizeof(Cell) * WIDTH * HEIGHT);
 
-  for (size_t i = 0; i < ROW; i++) {
-    for (size_t j = 0; j < COL; j++) {
+  for (size_t i = 0; i < WIDTH; i++) {
+    for (size_t j = 0; j < HEIGHT; j++) {
 
       int alive_count = countNeighbors(i, j);
 
@@ -110,12 +128,12 @@ void gen() {
       newGrid[i][j].state = automaton[gameGrid[i][j].state][alive_count];
     }
   }
-  memcpy(gameGrid, newGrid, sizeof(Cell) * COL * ROW);
+  memcpy(gameGrid, newGrid, sizeof(Cell) * WIDTH * HEIGHT);
 }
 void init_grid(bool rand) {
   SetRandomSeed(time(NULL));
-  for (size_t i = 0; i < ROW; i++) {
-    for (size_t j = 0; j < COL; j++) {
+  for (size_t i = 0; i < WIDTH; i++) {
+    for (size_t j = 0; j < HEIGHT; j++) {
 
       gameGrid[i][j].state = rand ? (State)(GetRandomValue(0, 1)) : 0;
       gameGrid[i][j].color = MYRED;
@@ -137,7 +155,7 @@ int main() {
   InitWindow(screenWidth, screenHeight, "Game of Life");
   init_grid(false);
 
-  gameGrid[250][250].state = ALIVE;
+  // gameGrid[250][250].state = ALIVE;
   double penTime = 0;
   Camera2D camera = {0};
   camera.zoom = 1.0f;
@@ -152,12 +170,12 @@ int main() {
       Vector2 delta = GetMouseDelta();
       delta = Vector2Scale(delta, -1.0f / camera.zoom);
 
-      if (camera.target.y + delta.y + 450 < COL * CELLSIZE * 0.5 &&
-          camera.target.y + delta.y > -COL * CELLSIZE * 0.5) {
+      if (camera.target.y + delta.y + 450 < WIDTH * CELLSIZE * 0.5 &&
+          camera.target.y + delta.y > -WIDTH * CELLSIZE * 0.5) {
         camera.target.y += delta.y;
       }
-      if (camera.target.x + delta.x + 450 < ROW * CELLSIZE * 0.5 &&
-          camera.target.x + delta.x > -ROW * CELLSIZE * 0.5) {
+      if (camera.target.x + delta.x + 450 < HEIGHT * CELLSIZE * 0.5 &&
+          camera.target.x + delta.x > -HEIGHT * CELLSIZE * 0.5) {
         camera.target.x += delta.x;
       }
 
@@ -171,10 +189,10 @@ int main() {
       int x = Floor(mouseWorldPos.x / CELLSIZE);
       int y = Floor(mouseWorldPos.y / CELLSIZE);
 
-      if (x >= -COL / 2 && x < COL / 2 && y >= -ROW / 2 && y < ROW / 2) {
+      if (x >= -WIDTH / 2 && x < WIDTH / 2 && y >= -HEIGHT / 2 && y < HEIGHT / 2) {
 
-        gameGrid[x + COL / 2][y + ROW / 2].state = Pen;
-        gameGrid[x + COL / 2][y + ROW / 2].color = MYRED;
+        gameGrid[x + WIDTH / 2][y + HEIGHT / 2].state = Pen;
+        gameGrid[x + WIDTH / 2][y + HEIGHT / 2].color = MYRED;
       }
     }
     // Zoom based on mouse wheel
@@ -214,34 +232,31 @@ int main() {
 
       init_grid(false);
     }
-    if (IsKeyPressed(KEY_J))
-    {
-      automaton_index=(automaton_index+TYPE_SIZE-1)%TYPE_SIZE;
-
+    if (IsKeyPressed(KEY_J)) {
+      automaton_index = (automaton_index + TYPE_SIZE - 1) % TYPE_SIZE;
     }
-    if (IsKeyPressed(KEY_K))
-    {
+    if (IsKeyPressed(KEY_K)) {
 
-      automaton_index+=1;
-      automaton_index%=TYPE_SIZE;
+      automaton_index += 1;
+      automaton_index %= TYPE_SIZE;
     }
     // Draw
     BeginDrawing();
     ClearBackground(DARKGRAY);
 
     BeginMode2D(camera);
-    for (int i = -COL / 2; i < COL / 2; i++) {
+    for (int i = -WIDTH / 2; i < WIDTH / 2; i++) {
 
-      for (int j = -ROW / 2; j < ROW / 2; j++) {
+      for (int j = -HEIGHT / 2; j < HEIGHT / 2; j++) {
 
-        switch (gameGrid[i + COL / 2][j + ROW / 2].state) {
+        switch (gameGrid[i + WIDTH / 2][j + HEIGHT / 2].state) {
         case DEAD:
           DrawRectangle(i * CELLSIZE, j * CELLSIZE, CELLSIZE * 1, CELLSIZE * 1,
                         WHITE);
           break;
         case ALIVE:
           DrawRectangle(i * CELLSIZE, j * CELLSIZE, CELLSIZE * 1, CELLSIZE * 1,
-                        gameGrid[i + COL / 2][j + ROW / 2].color);
+                        gameGrid[i + WIDTH / 2][j + HEIGHT / 2].color);
 
           break;
         }
@@ -253,7 +268,7 @@ int main() {
     float x = Floor(mouseWorldPos.x / CELLSIZE);
     float y = Floor(mouseWorldPos.y / CELLSIZE);
 
-    if (x >= -COL / 2.f && x < COL / 2.f && y >= -ROW / 2.f && y < ROW / 2.f) {
+    if (x >= -WIDTH / 2.f && x < WIDTH / 2.f && y >= -HEIGHT / 2.f && y < HEIGHT / 2.f) {
       DrawRectangle(x * CELLSIZE, y * CELLSIZE, CELLSIZE * 1, CELLSIZE * 1,
                     GRAY);
     }
@@ -269,7 +284,8 @@ int main() {
       } else
         DrawText("Switched pen to Dead", 10, 10, 20, PURPLE);
     }
-        DrawText(TextFormat("automaton: %s", type[automaton_index].arg), 10, GetScreenHeight()*.9f, 20, PURPLE);
+    DrawText(TextFormat("automaton: %s", type[automaton_index].arg), 10,
+             GetScreenHeight() * .9f, 20, PURPLE);
 
     EndDrawing();
   }
