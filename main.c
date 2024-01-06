@@ -14,6 +14,7 @@
 
 #define screenWidth 450
 #define screenHeight 450
+
 short automaton_index=0;
 
 typedef enum { DEAD, ALIVE } State;
@@ -45,9 +46,11 @@ State Rule30[2][9] = {
     {DEAD, ALIVE, ALIVE, ALIVE, ALIVE, DEAD, DEAD, DEAD, DEAD},
     {DEAD, ALIVE, DEAD, DEAD, DEAD, DEAD, DEAD, DEAD, DEAD},
 };
+
 State Maze[2][9] = {
     {DEAD, DEAD, DEAD, ALIVE, DEAD, DEAD, DEAD, DEAD, DEAD},
     {DEAD, ALIVE, ALIVE, ALIVE, ALIVE, ALIVE, DEAD, DEAD, DEAD}};
+
 State CoolEvil[2][9] = {
     {DEAD, ALIVE, ALIVE, ALIVE, ALIVE, ALIVE, DEAD, DEAD, DEAD},
     {DEAD, DEAD, DEAD, ALIVE, DEAD, DEAD, DEAD, DEAD, DEAD}};
@@ -83,14 +86,13 @@ int countNeighbors(int i, int j) {
 
   return alive_count;
 }
-void gen() {
 
+void gen() {
   cur *automaton= type[automaton_index].ptr;
   memcpy(newGrid, gameGrid, sizeof(Cell) * COL * ROW);
 
   for (size_t i = 0; i < ROW; i++) {
     for (size_t j = 0; j < COL; j++) {
-
       int alive_count = countNeighbors(i, j);
 
       if (newGrid[i][j].state == ALIVE &&
@@ -112,6 +114,7 @@ void gen() {
   }
   memcpy(gameGrid, newGrid, sizeof(Cell) * COL * ROW);
 }
+
 void init_grid(bool rand) {
   SetRandomSeed(time(NULL));
   for (size_t i = 0; i < ROW; i++) {
@@ -122,6 +125,7 @@ void init_grid(bool rand) {
     }
   }
 }
+
 int Floor(double x) {
   if (x >= 0.0) {
     return (int)x;
@@ -130,6 +134,7 @@ int Floor(double x) {
     return (x == intPart) ? (int)x : intPart - 1;
   }
 }
+
 int main() {
 
   State Pen = ALIVE;
@@ -146,7 +151,6 @@ int main() {
 
   while (!WindowShouldClose()) {
     // Update
-
     // Translate based on mouse right click
     if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
       Vector2 delta = GetMouseDelta();
@@ -164,8 +168,8 @@ int main() {
       // printf("x = %f\n", camera.target.x);
       // printf("y = %f\n", camera.target.y);
     }
-    if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
 
+    if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
       Vector2 mouseWorldPos = GetScreenToWorld2D(GetMousePosition(), camera);
 
       int x = Floor(mouseWorldPos.x / CELLSIZE);
@@ -177,6 +181,7 @@ int main() {
         gameGrid[x + COL / 2][y + ROW / 2].color = MYRED;
       }
     }
+
     // Zoom based on mouse wheel
     float wheel = GetMouseWheelMove();
     if (wheel != 0) {
@@ -214,14 +219,11 @@ int main() {
 
       init_grid(false);
     }
-    if (IsKeyPressed(KEY_J))
-    {
+    if (IsKeyPressed(KEY_J)) {
       automaton_index=(automaton_index+TYPE_SIZE-1)%TYPE_SIZE;
 
     }
-    if (IsKeyPressed(KEY_K))
-    {
-
+    if (IsKeyPressed(KEY_K)) {
       automaton_index+=1;
       automaton_index%=TYPE_SIZE;
     }
@@ -231,9 +233,7 @@ int main() {
 
     BeginMode2D(camera);
     for (int i = -COL / 2; i < COL / 2; i++) {
-
       for (int j = -ROW / 2; j < ROW / 2; j++) {
-
         switch (gameGrid[i + COL / 2][j + ROW / 2].state) {
         case DEAD:
           DrawRectangle(i * CELLSIZE, j * CELLSIZE, CELLSIZE * 1, CELLSIZE * 1,
