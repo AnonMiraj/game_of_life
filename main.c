@@ -158,10 +158,21 @@ int Floor(double x) {
     return (x == intPart) ? (int)x : intPart - 1;
   }
 }
-
+void draw_glider(size_t height, size_t width) {
+    gameGrid[(width+0)*WIDTH+height+1].state = ALIVE;
+    gameGrid[(width+0)*WIDTH+height+1].color = MYRED;
+    gameGrid[(width+1)*WIDTH+height+2].state = ALIVE;
+    gameGrid[(width+1)*WIDTH+height+2].color = MYRED;
+    gameGrid[(width+2)*WIDTH+height+0].state = ALIVE;
+    gameGrid[(width+2)*WIDTH+height+0].color = MYRED;
+    gameGrid[(width+2)*WIDTH+height+1].state = ALIVE;
+    gameGrid[(width+2)*WIDTH+height+1].color = MYRED;
+    gameGrid[(width+2)*WIDTH+height+2].state = ALIVE;
+    gameGrid[(width+2)*WIDTH+height+2].color = MYRED;
+}
 int main() {
 
-  State Pen = ALIVE;
+  bool Pen = ALIVE;
 
   InitWindow(screenWidth, screenHeight, "Game of Life");
   init_grid(false);
@@ -202,10 +213,22 @@ int main() {
       if (x >= -WIDTH / 2 && x < WIDTH / 2 && y >= -HEIGHT / 2 &&
           y < HEIGHT / 2) {
 
-        gameGrid[(x + WIDTH / 2) * WIDTH + y + HEIGHT / 2].state = Pen;
+
+        if (Pen) {
+        
+        gameGrid[(x + WIDTH / 2) * WIDTH + y + HEIGHT / 2].state = ALIVE;
         gameGrid[(x + WIDTH / 2) * WIDTH + y + HEIGHT / 2].color = MYRED;
+        }
+        else
+        draw_glider(y + HEIGHT / 2, (x + WIDTH / 2));
       }
     }
+    else if(GetTime() - penTime <= 0.3) {
+                // penTime =GetTime();
+
+        // gen();
+      }
+
 
     // Zoom based on mouse wheel
     float wheel = GetMouseWheelMove();
@@ -295,11 +318,11 @@ int main() {
     // cell state\n\nMouse wheel to zoom", 10, 10, 20,PURPLE);
     //
     if (GetTime() - penTime <= 0.3) {
-      if ((bool)Pen) {
+      if (Pen) {
 
         DrawText("Switched pen to Alive", 10, 10, 20, PURPLE);
       } else
-        DrawText("Switched pen to Dead", 10, 10, 20, PURPLE);
+        DrawText("Switched pen to Glider", 10, 10, 20, PURPLE);
     }
     DrawText(TextFormat("automaton: %s", type[automaton_index].arg), 10,
              GetScreenHeight() * .9f, 20, PURPLE);
