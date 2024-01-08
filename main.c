@@ -8,8 +8,8 @@
 
 #define MYRED                                                                  \
   CLITERAL(Color) { 255, 0, 0, 255 }
-#define WIDTH 500
-#define HEIGHT 500
+#define HEIGHT 100
+#define WIDTH 50
 #define CELLSIZE 25
 
 #define screenWidth 450
@@ -23,8 +23,8 @@ typedef struct {
 
 } Cell;
 
-Cell gameGrid[WIDTH * HEIGHT] = {0};
-// Cell newGrid[WIDTH * HEIGHT] = {0};
+Cell gameGrid[HEIGHT * WIDTH] = {0};
+Cell newGrid[HEIGHT * WIDTH] = {0};
 
 typedef State cur[9];
 
@@ -95,8 +95,8 @@ int countNeighbors(int i, int j) {
     for (int l = -1; l <= 1; l++) {
       if (k == 0 && l == 0)
         continue;
-      int row = (i + k + HEIGHT) % HEIGHT;
-      int col = (j + l + WIDTH) % WIDTH;
+      int row = (j + l + HEIGHT) % HEIGHT;
+      int col = (i + k + WIDTH) % WIDTH;
       if (gameGrid[row * WIDTH + col].state == ALIVE) {
         alive_count++;
       }
@@ -108,12 +108,12 @@ int countNeighbors(int i, int j) {
 
 void gen() {
   cur *automaton = type[automaton_index].ptr;
-  Cell *newGrid = calloc(HEIGHT * WIDTH, sizeof(Cell));
+  // Cell *newGrid = calloc(WIDTH * HEIGHT, sizeof(Cell));
 
-  memcpy(newGrid, gameGrid, sizeof(Cell) * WIDTH * HEIGHT);
+  memcpy(newGrid, gameGrid, sizeof(Cell) * HEIGHT * WIDTH);
 
-  for (size_t i = 0; i < WIDTH; i++) {
-    for (size_t j = 0; j < HEIGHT; j++) {
+  for (size_t i = 0; i < HEIGHT; i++) {
+    for (size_t j = 0; j < WIDTH; j++) {
 
       int alive_count = countNeighbors(i, j);
 
@@ -136,13 +136,13 @@ void gen() {
           automaton[gameGrid[i * WIDTH + j].state][alive_count];
     }
   }
-  memcpy(gameGrid, newGrid, sizeof(Cell) * WIDTH * HEIGHT);
+  memcpy(gameGrid, newGrid, sizeof(Cell) * HEIGHT * WIDTH);
 }
 
 void init_grid(bool rand) {
   SetRandomSeed(time(NULL));
-  for (size_t i = 0; i < WIDTH; i++) {
-    for (size_t j = 0; j < HEIGHT; j++) {
+  for (size_t i = 0; i < HEIGHT; i++) {
+    for (size_t j = 0; j < WIDTH; j++) {
 
       gameGrid[i * WIDTH + j].state = rand ? (State)(GetRandomValue(0, 1)) : 0;
       gameGrid[i * WIDTH + j].color = MYRED;
@@ -158,17 +158,25 @@ int Floor(double x) {
     return (x == intPart) ? (int)x : intPart - 1;
   }
 }
+int Round(double x) {
+  if (x >= 0.0) {
+    return (int)(x + 0.5);
+  } else {
+    return (int)(x - 0.5);
+  }
+}
+
 void draw_glider(size_t height, size_t width) {
-    gameGrid[(width+0)*WIDTH+height+1].state = ALIVE;
-    gameGrid[(width+0)*WIDTH+height+1].color = MYRED;
-    gameGrid[(width+1)*WIDTH+height+2].state = ALIVE;
-    gameGrid[(width+1)*WIDTH+height+2].color = MYRED;
-    gameGrid[(width+2)*WIDTH+height+0].state = ALIVE;
-    gameGrid[(width+2)*WIDTH+height+0].color = MYRED;
-    gameGrid[(width+2)*WIDTH+height+1].state = ALIVE;
-    gameGrid[(width+2)*WIDTH+height+1].color = MYRED;
-    gameGrid[(width+2)*WIDTH+height+2].state = ALIVE;
-    gameGrid[(width+2)*WIDTH+height+2].color = MYRED;
+  gameGrid[(height + 0) * WIDTH + width + 1].state = ALIVE;
+  gameGrid[(height + 0) * WIDTH + width + 1].color = MYRED;
+  gameGrid[(height + 1) * WIDTH + width + 2].state = ALIVE;
+  gameGrid[(height + 1) * WIDTH + width + 2].color = MYRED;
+  gameGrid[(height + 2) * WIDTH + width + 0].state = ALIVE;
+  gameGrid[(height + 2) * WIDTH + width + 0].color = MYRED;
+  gameGrid[(height + 2) * WIDTH + width + 1].state = ALIVE;
+  gameGrid[(height + 2) * WIDTH + width + 1].color = MYRED;
+  gameGrid[(height + 2) * WIDTH + width + 2].state = ALIVE;
+  gameGrid[(height + 2) * WIDTH + width + 2].color = MYRED;
 }
 int main() {
 
@@ -177,7 +185,9 @@ int main() {
   InitWindow(screenWidth, screenHeight, "Game of Life");
   init_grid(false);
 
-  // gameGrid[250][250].state = ALIVE;
+  gameGrid[HEIGHT * WIDTH / 2 + WIDTH / 2].state = ALIVE;
+  gameGrid[HEIGHT * WIDTH - 1].state = ALIVE;
+  gameGrid[0].state = ALIVE;
   double penTime = 0;
   Camera2D camera = {0};
   camera.zoom = 1.0f;
@@ -190,15 +200,15 @@ int main() {
     if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
       Vector2 delta = GetMouseDelta();
       delta = Vector2Scale(delta, -1.0f / camera.zoom);
-
-      if (camera.target.y + delta.y + 450 < WIDTH * CELLSIZE * 0.5 &&
-          camera.target.y + delta.y > -WIDTH * CELLSIZE * 0.5) {
-        camera.target.y += delta.y;
-      }
-      if (camera.target.x + delta.x + 450 < HEIGHT * CELLSIZE * 0.5 &&
-          camera.target.x + delta.x > -HEIGHT * CELLSIZE * 0.5) {
-        camera.target.x += delta.x;
-      }
+      //
+      // if (camera.target.y + delta.y + 450 < HEIGHT * CELLSIZE * 0.5 &&
+      //     camera.target.y + delta.y > -HEIGHT * CELLSIZE * 0.5) {
+      camera.target.y += delta.y;
+      // }
+      // if (camera.target.x + delta.x + 450 < WIDTH * CELLSIZE * 0.5 &&
+      //     camera.target.x + delta.x > -WIDTH * CELLSIZE * 0.5) {
+      camera.target.x += delta.x;
+      // }
 
       // printf("x = %f\n", camera.target.x);
       // printf("y = %f\n", camera.target.y);
@@ -209,27 +219,21 @@ int main() {
 
       int x = Floor(mouseWorldPos.x / CELLSIZE);
       int y = Floor(mouseWorldPos.y / CELLSIZE);
+      x += HEIGHT / 2;
+      y += WIDTH / 2;
 
-      if (x >= -WIDTH / 2 && x < WIDTH / 2 && y >= -HEIGHT / 2 &&
-          y < HEIGHT / 2) {
-
+      // printf("x %d\n", x);
+      // printf("y %d\n", y);
+      if (x >= 0 && x < HEIGHT && y >= 0 && y < WIDTH) {
 
         if (Pen) {
-        
-        gameGrid[(x + WIDTH / 2) * WIDTH + y + HEIGHT / 2].state = ALIVE;
-        gameGrid[(x + WIDTH / 2) * WIDTH + y + HEIGHT / 2].color = MYRED;
-        }
-        else
-        draw_glider(y + HEIGHT / 2, (x + WIDTH / 2));
+          gameGrid[x * WIDTH + y].state = ALIVE;
+          gameGrid[x * WIDTH + y].color = MYRED;
+        } else
+          draw_glider(x, y);
       }
     }
-    else if(GetTime() - penTime <= 0.3) {
-                // penTime =GetTime();
-
-        // gen();
-      }
-
-
+    //
     // Zoom based on mouse wheel
     float wheel = GetMouseWheelMove();
     if (wheel != 0) {
@@ -282,20 +286,29 @@ int main() {
 
     BeginMode2D(camera);
 
-    for (int i = -WIDTH / 2; i < WIDTH / 2; i++) {
+    Vector2 windStart = GetWorldToScreen2D(Vector2Zero(), camera);
+    int windStartX = Round(-(windStart.x / CELLSIZE) / camera.zoom) - 1;
+    int windStartY = Round(-(windStart.y / CELLSIZE) / camera.zoom) - 1;
+    int windEndX = Round(-(windStart.x / CELLSIZE) / camera.zoom);
+    int windEndY = Round(-(windStart.y / CELLSIZE) / camera.zoom) - 1;
 
-      for (int j = -HEIGHT / 2; j < HEIGHT / 2; j++) {
+    for (int i = windStartX; i < HEIGHT / 2; i++) {
 
-        switch (gameGrid[(i + WIDTH / 2) * WIDTH + j + HEIGHT / 2].state) {
+      for (int j = windStartY; j < WIDTH / 2; j++) {
+
+        if (i < -HEIGHT / 2 || j < -WIDTH / 2) {
+          continue;
+        }
+        switch (gameGrid[(i + HEIGHT / 2) * WIDTH + j + WIDTH / 2].state) {
 
         case DEAD:
-          DrawRectangle(i * CELLSIZE, j * CELLSIZE, CELLSIZE * 1, CELLSIZE * 1,
-                        WHITE);
+          DrawRectangle(i * CELLSIZE, j * CELLSIZE, CELLSIZE * 0.95,
+                        CELLSIZE * .95, WHITE);
           break;
         case ALIVE:
           DrawRectangle(
-              i * CELLSIZE, j * CELLSIZE, CELLSIZE * 1, CELLSIZE * 1,
-              gameGrid[(i + WIDTH / 2) * WIDTH + j + HEIGHT / 2].color);
+              i * CELLSIZE, j * CELLSIZE, CELLSIZE * 0.95, CELLSIZE * 0.95,
+              gameGrid[(i + HEIGHT / 2) * WIDTH + j + WIDTH / 2].color);
 
           break;
         }
@@ -307,13 +320,24 @@ int main() {
     float x = Floor(mouseWorldPos.x / CELLSIZE);
     float y = Floor(mouseWorldPos.y / CELLSIZE);
 
-    if (x >= -WIDTH / 2.f && x < WIDTH / 2.f && y >= -HEIGHT / 2.f &&
-        y < HEIGHT / 2.f) {
+    if (x >= -HEIGHT / 2.f && x < HEIGHT / 2.f && y >= -WIDTH / 2.f &&
+        y < WIDTH / 2.f) {
       DrawRectangle(x * CELLSIZE, y * CELLSIZE, CELLSIZE * 1, CELLSIZE * 1,
                     GRAY);
     }
 
     EndMode2D();
+
+    DrawText(
+        TextFormat("x %d", Round(-(GetWorldToScreen2D(Vector2Zero(), camera).x /
+                                   CELLSIZE) /
+                                 camera.zoom)),
+        10, 10, 20, PURPLE);
+    DrawText(
+        TextFormat("y %d", Round(-GetWorldToScreen2D(Vector2Zero(), camera).y /
+                                 CELLSIZE / camera.zoom)),
+        10, 30, 20, PURPLE);
+
     // DrawText("Mouse right button drag to move\n\nMouse left button toggle
     // cell state\n\nMouse wheel to zoom", 10, 10, 20,PURPLE);
     //
@@ -324,9 +348,15 @@ int main() {
       } else
         DrawText("Switched pen to Glider", 10, 10, 20, PURPLE);
     }
-    DrawText(TextFormat("automaton: %s", type[automaton_index].arg), 10,
-             GetScreenHeight() * .9f, 20, PURPLE);
 
+    DrawRectangle(
+        10 - 5, GetScreenHeight() * .9f - 5,
+        MeasureText(TextFormat("automaton: %s  ", type[automaton_index].arg),
+                    20) +
+            10,
+        30, WHITE);
+    DrawText(TextFormat("automaton: %s", type[automaton_index].arg), 15,
+             GetScreenHeight() * .9f, 20, PURPLE);
     EndDrawing();
   }
 
