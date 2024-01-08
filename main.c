@@ -8,12 +8,10 @@
 
 #define MYRED                                                                  \
   CLITERAL(Color) { 255, 0, 0, 255 }
-#define HEIGHT 100
-#define WIDTH 50
+#define HEIGHT 1000
+#define WIDTH 1000
 #define CELLSIZE 25
 
-#define screenWidth 450
-#define screenHeight 450
 short automaton_index = 0;
 
 typedef enum { DEAD, ALIVE } State;
@@ -95,8 +93,8 @@ int countNeighbors(int i, int j) {
     for (int l = -1; l <= 1; l++) {
       if (k == 0 && l == 0)
         continue;
-      int row = (j + l + HEIGHT) % HEIGHT;
-      int col = (i + k + WIDTH) % WIDTH;
+      int row = (i + l + HEIGHT) % HEIGHT;
+      int col = (j + k + WIDTH) % WIDTH;
       if (gameGrid[row * WIDTH + col].state == ALIVE) {
         alive_count++;
       }
@@ -182,6 +180,13 @@ int main() {
 
   bool Pen = ALIVE;
 
+  int screenWidth = 600;
+  int screenHeight = 450;
+
+  // Set the window to be resizable
+  SetConfigFlags(FLAG_WINDOW_RESIZABLE);
+
+  SetConfigFlags(FLAG_WINDOW_UNDECORATED);
   InitWindow(screenWidth, screenHeight, "Game of Life");
   init_grid(false);
 
@@ -195,6 +200,11 @@ int main() {
   SetTargetFPS(60);
 
   while (!WindowShouldClose()) {
+    if (IsWindowResized()) {
+      // Update the screen width and height after resizing
+      screenWidth = GetScreenWidth();
+      screenHeight = GetScreenHeight();
+    }
     // Update
     // Translate based on mouse right click
     if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
@@ -287,27 +297,29 @@ int main() {
     BeginMode2D(camera);
 
     Vector2 windStart = GetWorldToScreen2D(Vector2Zero(), camera);
-    int windStartX = Round(-(windStart.x / CELLSIZE) / camera.zoom) - 1;
-    int windStartY = Round(-(windStart.y / CELLSIZE) / camera.zoom) - 1;
-    int windEndX = Round(-(windStart.x / CELLSIZE) / camera.zoom);
-    int windEndY = Round(-(windStart.y / CELLSIZE) / camera.zoom) - 1;
+    int windStartX = Round(-(windStart.x / CELLSIZE) / camera.zoom);
+    int windStartY = Round(-(windStart.y / CELLSIZE) / camera.zoom);
+    int windEndX =
+        windStartX + (int)((screenWidth / CELLSIZE) + 1) / camera.zoom;
+    int windEndY =
+        windStartY + (int)((screenHeight / CELLSIZE) + 1) / camera.zoom;
 
-    for (int i = windStartX; i < HEIGHT / 2; i++) {
+    for (int i = windStartX - 1; i <= windEndX; i++) {
 
-      for (int j = windStartY; j < WIDTH / 2; j++) {
+      for (int j = windStartY - 1; j <= windEndY; j++) {
 
-        if (i < -HEIGHT / 2 || j < -WIDTH / 2) {
+        if ((i < -HEIGHT / 2 || j < -WIDTH / 2) ||
+            (i >= HEIGHT / 2 || j >= WIDTH / 2)) {
           continue;
         }
         switch (gameGrid[(i + HEIGHT / 2) * WIDTH + j + WIDTH / 2].state) {
 
         case DEAD:
-          DrawRectangle(i * CELLSIZE, j * CELLSIZE, CELLSIZE * 0.95,
-                        CELLSIZE * .95, WHITE);
+          DrawRectangle(i * CELLSIZE, j * CELLSIZE, CELLSIZE, CELLSIZE, WHITE);
           break;
         case ALIVE:
           DrawRectangle(
-              i * CELLSIZE, j * CELLSIZE, CELLSIZE * 0.95, CELLSIZE * 0.95,
+              i * CELLSIZE, j * CELLSIZE, CELLSIZE, CELLSIZE,
               gameGrid[(i + HEIGHT / 2) * WIDTH + j + WIDTH / 2].color);
 
           break;
@@ -327,16 +339,6 @@ int main() {
     }
 
     EndMode2D();
-
-    DrawText(
-        TextFormat("x %d", Round(-(GetWorldToScreen2D(Vector2Zero(), camera).x /
-                                   CELLSIZE) /
-                                 camera.zoom)),
-        10, 10, 20, PURPLE);
-    DrawText(
-        TextFormat("y %d", Round(-GetWorldToScreen2D(Vector2Zero(), camera).y /
-                                 CELLSIZE / camera.zoom)),
-        10, 30, 20, PURPLE);
 
     // DrawText("Mouse right button drag to move\n\nMouse left button toggle
     // cell state\n\nMouse wheel to zoom", 10, 10, 20,PURPLE);
