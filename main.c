@@ -15,9 +15,10 @@
 short automaton_index = 0;
 float grid_lines = 1.0;
 
-typedef enum { DEAD, ALIVE } State;
+#define ALIVE true
+#define DEAD false
 typedef struct {
-  State state : 1;
+  unsigned char state; // (wasted)000 (neighbor count )0000 (state)0
   Color color;
 
 } Cell;
@@ -25,45 +26,43 @@ typedef struct {
 Cell gameGrid[HEIGHT * WIDTH] = {0};
 Cell newGrid[HEIGHT * WIDTH] = {0};
 
-typedef State cur[9];
+typedef bool cur[9];
 
-State Gol[2][9] = {{DEAD, DEAD, DEAD, ALIVE, DEAD, DEAD, DEAD, DEAD, DEAD},
+bool Gol[2][9] = {{DEAD, DEAD, DEAD, ALIVE, DEAD, DEAD, DEAD, DEAD, DEAD},
                    {DEAD, DEAD, ALIVE, ALIVE, DEAD, DEAD, DEAD, DEAD, DEAD}};
 
-State Seeds[2][9] = {
+bool Seeds[2][9] = {
     {DEAD, DEAD, ALIVE, DEAD, DEAD, DEAD, DEAD, DEAD, DEAD},
     {DEAD, DEAD, DEAD, DEAD, DEAD, DEAD, DEAD, DEAD, DEAD},
 };
 
-State Som[2][9] = {
+bool Som[2][9] = {
     {DEAD, DEAD, ALIVE, ALIVE, DEAD, DEAD, DEAD, DEAD, DEAD},
     {DEAD, DEAD, DEAD, ALIVE, DEAD, DEAD, DEAD, DEAD, DEAD},
 };
 
-State Cool[2][9] = {
+bool Cool[2][9] = {
     {DEAD, ALIVE, ALIVE, ALIVE, ALIVE, DEAD, DEAD, DEAD, DEAD},
     {DEAD, ALIVE, DEAD, DEAD, DEAD, DEAD, DEAD, DEAD, DEAD},
 };
-
-State Maze[2][9] = {
+bool Maze[2][9] = {
     {DEAD, DEAD, DEAD, ALIVE, DEAD, DEAD, DEAD, DEAD, DEAD},
     {DEAD, ALIVE, ALIVE, ALIVE, ALIVE, ALIVE, DEAD, DEAD, DEAD}};
-
-State MiceMaze[2][9] = {
+bool MiceMaze[2][9] = {
     {DEAD, DEAD, DEAD, ALIVE, DEAD, DEAD, DEAD, ALIVE, DEAD},
     {DEAD, ALIVE, ALIVE, ALIVE, ALIVE, ALIVE, DEAD, DEAD, DEAD}};
-State Mazectric[2][9] = {
+bool Mazectric[2][9] = {
     {DEAD, DEAD, DEAD, ALIVE, DEAD, DEAD, DEAD, DEAD, DEAD},
     {DEAD, ALIVE, ALIVE, ALIVE, ALIVE, DEAD, DEAD, DEAD, DEAD}};
-State MiceMazectric[2][9] = {
+bool MiceMazectric[2][9] = {
     {DEAD, DEAD, DEAD, ALIVE, DEAD, DEAD, DEAD, ALIVE, DEAD},
     {DEAD, ALIVE, ALIVE, ALIVE, ALIVE, DEAD, DEAD, DEAD, DEAD}};
 
-State CoolEvil[2][9] = {
+bool CoolEvil[2][9] = {
     {DEAD, ALIVE, ALIVE, ALIVE, ALIVE, ALIVE, DEAD, DEAD, DEAD},
     {DEAD, DEAD, DEAD, ALIVE, DEAD, DEAD, DEAD, DEAD, DEAD}};
 
-State DayNight[2][9] = {
+bool DayNight[2][9] = {
     {DEAD, DEAD, DEAD, ALIVE, DEAD, DEAD, ALIVE, ALIVE, ALIVE},
     {DEAD, DEAD, DEAD, ALIVE, ALIVE, DEAD, ALIVE, ALIVE, ALIVE},
 };
@@ -144,7 +143,7 @@ void init_grid(bool rand) {
   for (size_t i = 0; i < HEIGHT; i++) {
     for (size_t j = 0; j < WIDTH; j++) {
 
-      gameGrid[i * WIDTH + j].state = rand ? (State)(GetRandomValue(0, 1)) : 0;
+      gameGrid[i * WIDTH + j].state = rand ? (GetRandomValue(0, 1)) : 0;
       gameGrid[i * WIDTH + j].color = MYRED;
     }
   }
