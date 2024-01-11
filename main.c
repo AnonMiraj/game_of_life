@@ -13,7 +13,7 @@
 #define CELLSIZE 25
 
 short automaton_index = 0;
-float gridbored = 1.0;
+float grid_lines = 1.0;
 
 typedef enum { DEAD, ALIVE } State;
 typedef struct {
@@ -94,6 +94,7 @@ int countNeighbors(int i, int j) {
     for (int l = -1; l <= 1; l++) {
       if (k == 0 && l == 0)
         continue;
+
       int row = (i + l + HEIGHT) % HEIGHT;
       int col = (j + k + WIDTH) % WIDTH;
       if (gameGrid[row * WIDTH + col].state == ALIVE) {
@@ -179,7 +180,17 @@ void draw_glider(size_t height, size_t width) {
 }
 int main() {
 
+  bool pause = true;
   bool Pen = ALIVE;
+  bool helpMenu = false;
+
+  double prevUpdateTime = 0;
+  double nowTime = 0;
+  double timeBetweenUpdatesSec = 0.25;
+  const double slowestUpdateSec = 2.0;
+  const double fastestUpdateSec = 0.020;
+  const double updateStepSec = 0.040;
+  int genNum = 0;
 
   int screenWidth = 600;
   int screenHeight = 450;
@@ -202,7 +213,6 @@ int main() {
 
   while (!WindowShouldClose()) {
     if (IsWindowResized()) {
-      // Update the screen width and height after resizing
       screenWidth = GetScreenWidth();
       screenHeight = GetScreenHeight();
     }
@@ -268,6 +278,7 @@ int main() {
     }
     if (IsKeyPressed(KEY_SPACE) || IsKeyPressedRepeat(KEY_SPACE)) {
       gen();
+      genNum++;
     }
 
     switch (GetKeyPressed()) {
@@ -276,9 +287,11 @@ int main() {
       Pen = !Pen;
       break;
     case KEY_R:
+      genNum=0;
       init_grid(true);
       break;
     case KEY_C:
+      genNum=0;
       init_grid(false);
       break;
     case KEY_J:
@@ -289,13 +302,40 @@ int main() {
       automaton_index %= TYPE_SIZE;
       break;
     case KEY_G:
-      if (gridbored == 1)
-        gridbored -= 0.05;
+      if (grid_lines == 1)
+        grid_lines -= 0.05;
       else
-        gridbored = 1.f;
+        grid_lines = 1.f;
+      break;
+    case KEY_P:
+      pause = !pause;
+      break;
+    case KEY_MINUS:
+      timeBetweenUpdatesSec += updateStepSec;
+      if (timeBetweenUpdatesSec > slowestUpdateSec) {
+        timeBetweenUpdatesSec = slowestUpdateSec;
+      }
+      break;
+
+    case KEY_EQUAL:
+      timeBetweenUpdatesSec -= updateStepSec;
+      if (timeBetweenUpdatesSec < fastestUpdateSec) {
+        timeBetweenUpdatesSec = fastestUpdateSec;
+      }
+      break;
+    case KEY_H:
+    case KEY_SLASH:
+    case KEY_F1:
+      helpMenu = true;
       break;
     }
-
+    nowTime = GetTime();
+    if (!pause && nowTime - prevUpdateTime >= timeBetweenUpdatesSec &&
+        !IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+      gen();
+      prevUpdateTime = nowTime;
+      genNum++;
+    }
     // Draw
     BeginDrawing();
     ClearBackground(DARKGRAY);
@@ -321,13 +361,13 @@ int main() {
         switch (gameGrid[(i + HEIGHT / 2) * WIDTH + j + WIDTH / 2].state) {
 
         case DEAD:
-          DrawRectangle(i * CELLSIZE, j * CELLSIZE, CELLSIZE * gridbored,
-                        CELLSIZE * gridbored, WHITE);
+          DrawRectangle(i * CELLSIZE, j * CELLSIZE, CELLSIZE * grid_lines,
+                        CELLSIZE * grid_lines, WHITE);
           break;
         case ALIVE:
           DrawRectangle(
-              i * CELLSIZE, j * CELLSIZE, CELLSIZE * gridbored,
-              CELLSIZE * gridbored,
+              i * CELLSIZE, j * CELLSIZE, CELLSIZE * grid_lines,
+              CELLSIZE * grid_lines,
               gameGrid[(i + HEIGHT / 2) * WIDTH + j + WIDTH / 2].color);
 
           break;
@@ -348,9 +388,6 @@ int main() {
 
     EndMode2D();
 
-    // DrawText("Mouse right button drag to move\n\nMouse left button toggle
-    // cell state\n\nMouse wheel to zoom", 10, 10, 20,PURPLE);
-    //
     if (GetTime() - penTime <= 0.3) {
       if (Pen) {
 
@@ -361,13 +398,67 @@ int main() {
 
     DrawRectangle(
         10 - 5, GetScreenHeight() * .9f - 5,
-        MeasureText(TextFormat("automaton: %s  ", type[automaton_index].arg),
+        MeasureText(TextFormat("Automaton: %s ", type[automaton_index].arg),
                     20) +
             10,
-        30, WHITE);
-    DrawText(TextFormat("automaton: %s", type[automaton_index].arg), 15,
+        30, Fade(WHITE, 0.8f));
+
+    DrawText(TextFormat("Automaton: %s", type[automaton_index].arg), 15,
              GetScreenHeight() * .9f, 20, PURPLE);
+
+    DrawRectangle(10 - 5, GetScreenHeight() * .95f - 5, 110, 30,
+                  Fade(WHITE, 0.8f));
+
+    DrawText(TextFormat("Gen: %d", genNum), 15, GetScreenHeight() * .95f, 20,
+             PURPLE);
     EndDrawing();
+    while (helpMenu) {
+      BeginDrawing();
+
+      ClearBackground(RAYWHITE);
+      DrawText("Help Menu",
+               GetScreenWidth() / 2 - MeasureText("Help Menu", 30) / 2, 10, 30,
+               DARKGRAY);
+
+      // Menu items
+      int y = 70;
+      int spacing = 25;
+
+      DrawText("- Press H to show this help menu", 30, y += spacing, 20,
+               DARKGRAY);
+      DrawText("- Right-click and drag to move the camera", 30, y += spacing,
+               20, DARKGRAY);
+      DrawText("- Scroll wheel to zoom in/out", 30, y += spacing, 20, DARKGRAY);
+      DrawText("- Press and hold LEFT MOUSE BUTTON to draw in the grid", 30,
+               y += spacing, 20, DARKGRAY);
+      DrawText("- Use the mouse wheel to zoom in/out at the cursor position",
+               30, y += spacing, 20, DARKGRAY);
+
+      DrawText("- Press SPACE to generate the next iteration", 30, y += spacing,
+               20, DARKGRAY);
+
+      DrawText("- Press ENTER to toggle the pen for drawing on the grid", 30,
+               y += spacing, 20, DARKGRAY);
+
+      DrawText("- Press R to initialize the grid with random cells", 30,
+               y += spacing, 20, DARKGRAY);
+      DrawText("- Press C to clear the grid", 30, y += spacing, 20, DARKGRAY);
+      DrawText("- Press J/K to cycle through different automaton types", 30,
+               y += spacing, 20, DARKGRAY);
+      DrawText("- Press G to toggle grid boredom effect", 30, y += spacing, 20,
+               DARKGRAY);
+      DrawText("- Press P to pause/unpause simulation", 30, y += spacing, 20,
+               DARKGRAY);
+      DrawText("- Press +/- to adjust simulation speed", 30, y += spacing, 20,
+               DARKGRAY);
+
+      DrawText("- Press any key to go back", 30, y += spacing * 2, 30,
+               DARKGRAY);
+      EndDrawing();
+      if (GetKeyPressed()) {
+        helpMenu = false;
+      }
+    }
   }
 
   CloseWindow();

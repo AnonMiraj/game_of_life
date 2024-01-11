@@ -3,10 +3,9 @@ a small implementation of Conway's game of life because I was bored
 
 ## todo 
 - [x] actually implement the game of life logic
-
-~~- [ ] try and represent each cell in a 1-bit register~~ (very hard kinda)
 - [ ] optimize the logic more  
-- [ ] autoplay and show gen
+- [x] autoplay and show gen
 - [x] add more cool Cellular automata
-- [x] add a way to change between the rules and maybe even a way to set your own
+- [x] add a way to change between the rules and maybe even a way to set your own 
+- [ ] record GIF ? And add one to the repo 
 
