@@ -2,8 +2,8 @@
 a small implementation of Conway's game of life because I was bored 
 
 ## todo 
-- [x] limit the borders
 - [x] actually implement the game of life logic
+
 ~~- [ ] try and represent each cell in a 1-bit register~~ (very hard kinda)
 - [ ] optimize the logic more  
 - [ ] autoplay and show gen

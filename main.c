@@ -13,6 +13,7 @@
 #define CELLSIZE 25
 
 short automaton_index = 0;
+float gridbored = 1.0;
 
 typedef enum { DEAD, ALIVE } State;
 typedef struct {
@@ -224,7 +225,7 @@ int main() {
       // printf("y = %f\n", camera.target.y);
     }
 
-    if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+    if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && IsCursorOnScreen()) {
       Vector2 mouseWorldPos = GetScreenToWorld2D(GetMousePosition(), camera);
 
       int x = Floor(mouseWorldPos.x / CELLSIZE);
@@ -265,31 +266,36 @@ int main() {
       if (camera.zoom < zoomIncrement)
         camera.zoom = zoomIncrement;
     }
-    if (IsKeyPressed(KEY_ENTER)) {
-      penTime = GetTime();
-      Pen = !Pen;
-    }
     if (IsKeyPressed(KEY_SPACE) || IsKeyPressedRepeat(KEY_SPACE)) {
       gen();
     }
-    if (IsKeyPressed(KEY_R)) {
 
+    switch (GetKeyPressed()) {
+    case KEY_ENTER:
+      penTime = GetTime();
+      Pen = !Pen;
+      break;
+    case KEY_R:
       init_grid(true);
-    }
-
-    if (IsKeyPressed(KEY_C)) {
-
+      break;
+    case KEY_C:
       init_grid(false);
-    }
-    if (IsKeyPressed(KEY_J)) {
-
+      break;
+    case KEY_J:
       automaton_index = (automaton_index + TYPE_SIZE - 1) % TYPE_SIZE;
-    }
-    if (IsKeyPressed(KEY_K)) {
-
+      break;
+    case KEY_K:
       automaton_index += 1;
       automaton_index %= TYPE_SIZE;
+      break;
+    case KEY_G:
+      if (gridbored == 1)
+        gridbored -= 0.05;
+      else
+        gridbored = 1.f;
+      break;
     }
+
     // Draw
     BeginDrawing();
     ClearBackground(DARKGRAY);
@@ -315,11 +321,13 @@ int main() {
         switch (gameGrid[(i + HEIGHT / 2) * WIDTH + j + WIDTH / 2].state) {
 
         case DEAD:
-          DrawRectangle(i * CELLSIZE, j * CELLSIZE, CELLSIZE, CELLSIZE, WHITE);
+          DrawRectangle(i * CELLSIZE, j * CELLSIZE, CELLSIZE * gridbored,
+                        CELLSIZE * gridbored, WHITE);
           break;
         case ALIVE:
           DrawRectangle(
-              i * CELLSIZE, j * CELLSIZE, CELLSIZE, CELLSIZE,
+              i * CELLSIZE, j * CELLSIZE, CELLSIZE * gridbored,
+              CELLSIZE * gridbored,
               gameGrid[(i + HEIGHT / 2) * WIDTH + j + WIDTH / 2].color);
 
           break;
