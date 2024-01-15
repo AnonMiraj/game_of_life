@@ -315,16 +315,6 @@ int main() {
     }
     if (IsKeyPressed(KEY_SPACE) || IsKeyPressedRepeat(KEY_SPACE)) {
       gen();
-      gen();
-      gen();
-      gen();
-      gen();
-      gen();
-      genNum++;
-      genNum++;
-      genNum++;
-      genNum++;
-      genNum++;
       genNum++;
     }
 

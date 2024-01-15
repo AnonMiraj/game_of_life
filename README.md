@@ -9,5 +9,5 @@ a small implementation of Conway's game of life because I was bored
 - [x] autoplay and show gen
 - [x] add more cool Cellular automata
 - [x] add a way to change between the rules and maybe even a way to set your own 
-- [ ] hot reload for development? (litrely no reason other than it's a cool idea)
+- [ ] hot reload for development? (Literally no reason other than it's a cool idea)
 - [ ] Record GIF ? And add one to the repo 
