@@ -7,7 +7,7 @@
 #include <time.h>
 
 #define MYRED                                                                  \
-  CLITERAL(Color) { 255, 0, 0, 255 }
+  (Color) { 255, 0, 0, 255 }
 #define HEIGHT 1000
 #define WIDTH 1000
 #define CELLSIZE 25
@@ -17,6 +17,7 @@ float grid_lines = 1.0;
 
 #define ALIVE true
 #define DEAD false
+
 typedef struct {
   unsigned char state; // (wasted)000 (neighbor count )0000 (state)0
   Color color;
@@ -29,7 +30,7 @@ Cell newGrid[HEIGHT * WIDTH] = {0};
 typedef bool cur[9];
 
 bool Gol[2][9] = {{DEAD, DEAD, DEAD, ALIVE, DEAD, DEAD, DEAD, DEAD, DEAD},
-                   {DEAD, DEAD, ALIVE, ALIVE, DEAD, DEAD, DEAD, DEAD, DEAD}};
+                  {DEAD, DEAD, ALIVE, ALIVE, DEAD, DEAD, DEAD, DEAD, DEAD}};
 
 bool Seeds[2][9] = {
     {DEAD, DEAD, ALIVE, DEAD, DEAD, DEAD, DEAD, DEAD, DEAD},
@@ -45,15 +46,17 @@ bool Cool[2][9] = {
     {DEAD, ALIVE, ALIVE, ALIVE, ALIVE, DEAD, DEAD, DEAD, DEAD},
     {DEAD, ALIVE, DEAD, DEAD, DEAD, DEAD, DEAD, DEAD, DEAD},
 };
-bool Maze[2][9] = {
-    {DEAD, DEAD, DEAD, ALIVE, DEAD, DEAD, DEAD, DEAD, DEAD},
-    {DEAD, ALIVE, ALIVE, ALIVE, ALIVE, ALIVE, DEAD, DEAD, DEAD}};
+bool Maze[2][9] = {{DEAD, DEAD, DEAD, ALIVE, DEAD, DEAD, DEAD, DEAD, DEAD},
+                   {DEAD, ALIVE, ALIVE, ALIVE, ALIVE, ALIVE, DEAD, DEAD, DEAD}};
+
 bool MiceMaze[2][9] = {
     {DEAD, DEAD, DEAD, ALIVE, DEAD, DEAD, DEAD, ALIVE, DEAD},
     {DEAD, ALIVE, ALIVE, ALIVE, ALIVE, ALIVE, DEAD, DEAD, DEAD}};
+
 bool Mazectric[2][9] = {
     {DEAD, DEAD, DEAD, ALIVE, DEAD, DEAD, DEAD, DEAD, DEAD},
     {DEAD, ALIVE, ALIVE, ALIVE, ALIVE, DEAD, DEAD, DEAD, DEAD}};
+
 bool MiceMazectric[2][9] = {
     {DEAD, DEAD, DEAD, ALIVE, DEAD, DEAD, DEAD, ALIVE, DEAD},
     {DEAD, ALIVE, ALIVE, ALIVE, ALIVE, DEAD, DEAD, DEAD, DEAD}};
@@ -86,65 +89,106 @@ Type type[TYPE_SIZE] = {
     {"cool evil", &CoolEvil},
 };
 
-int countNeighbors(int i, int j) {
-  int alive_count = 0;
+void setCell(int height, int width) {
+  int gridAddress = height * WIDTH + width;
+  if ((gameGrid[gridAddress].state & 0x01)) {
 
-  for (int k = -1; k <= 1; k++) {
-    for (int l = -1; l <= 1; l++) {
-      if (k == 0 && l == 0)
-        continue;
+    if (gameGrid[gridAddress].color.b != 255) {
 
-      int row = (i + l + HEIGHT) % HEIGHT;
-      int col = (j + k + WIDTH) % WIDTH;
-      if (gameGrid[row * WIDTH + col].state == ALIVE) {
-        alive_count++;
-      }
+      gameGrid[gridAddress].color.b += 3;
     }
+    if (gameGrid[gridAddress].color.r != 0) {
+
+      gameGrid[gridAddress].color.r -= 3;
+    }
+
+    return;
   }
 
-  return alive_count;
+  // Calculate the offsets to the eight neighboring cells,
+  // accounting for wrapping around at the edges of the cell map
+  int xoleft = (width == 0) ? WIDTH - 1 : -1;
+  int xoright = (width == (WIDTH - 1)) ? -(WIDTH - 1) : 1;
+  int yoabove = (height == 0) ? WIDTH * HEIGHT - WIDTH : -WIDTH;
+  int yobelow = (height == (HEIGHT - 1)) ? -(WIDTH * HEIGHT - WIDTH) : WIDTH;
+
+  gameGrid[gridAddress].state |= 0x01; // Set first bit to 1
+
+  // Change successive bits for neighbour counts
+  gameGrid[gridAddress + yoabove + xoleft].state += 0x02;
+  gameGrid[gridAddress + yoabove].state += 0x02;
+  gameGrid[gridAddress + yoabove + xoright].state += 0x02;
+  gameGrid[gridAddress + xoleft].state += 0x02;
+  gameGrid[gridAddress + xoright].state += 0x02;
+  gameGrid[gridAddress + yobelow + xoleft].state += 0x02;
+  gameGrid[gridAddress + yobelow].state += 0x02;
+  gameGrid[gridAddress + yobelow + xoright].state += 0x02;
+}
+
+void clearCell(int height, int width) {
+  int gridAddress = height * WIDTH + width;
+    gameGrid[gridAddress].color = MYRED;
+  if (!(gameGrid[gridAddress].state & 0x01)) {
+
+    return;
+  }
+  // Calculate the offsets to the eight neighboring cells,
+  // accounting for wrapping around at the edges of the cell map
+  int xoleft = (width == 0) ? WIDTH - 1 : -1;
+  int xoright = (width == (WIDTH - 1)) ? -(WIDTH - 1) : 1;
+  int yoabove = (height == 0) ? WIDTH * HEIGHT - WIDTH : -WIDTH;
+  int yobelow = (height == (HEIGHT - 1)) ? -(WIDTH * HEIGHT - WIDTH) : WIDTH;
+
+  gameGrid[gridAddress].state &= ~0x01; // Set first bit to 1
+  // Change successive bits for neighbour counts
+  gameGrid[gridAddress + yoabove + xoleft].state -= 0x02;
+  gameGrid[gridAddress + yoabove].state -= 0x02;
+  gameGrid[gridAddress + yoabove + xoright].state -= 0x02;
+  gameGrid[gridAddress + xoleft].state -= 0x02;
+  gameGrid[gridAddress + xoright].state -= 0x02;
+  gameGrid[gridAddress + yobelow + xoleft].state -= 0x02;
+  gameGrid[gridAddress + yobelow].state -= 0x02;
+  gameGrid[gridAddress + yobelow + xoright].state -= 0x02;
 }
 
 void gen() {
   cur *automaton = type[automaton_index].ptr;
-  // Cell *newGrid = calloc(WIDTH * HEIGHT, sizeof(Cell));
 
   memcpy(newGrid, gameGrid, sizeof(Cell) * HEIGHT * WIDTH);
 
   for (size_t i = 0; i < HEIGHT; i++) {
     for (size_t j = 0; j < WIDTH; j++) {
 
-      int alive_count = countNeighbors(i, j);
-
-      if (newGrid[i * WIDTH + j].state == ALIVE &&
-          newGrid[i * WIDTH + j].state ==
-              automaton[gameGrid[i * WIDTH + j].state][alive_count]) {
-
-        if (newGrid[i * WIDTH + j].color.b != 255) {
-
-          newGrid[i * WIDTH + j].color.b += 3;
-        }
-        if (newGrid[i * WIDTH + j].color.r != 0) {
-
-          newGrid[i * WIDTH + j].color.r -= 3;
-        }
-      } else {
-        newGrid[i * WIDTH + j].color = MYRED;
+      if (!newGrid[i * WIDTH + j].state) {
+        continue;
       }
-      newGrid[i * WIDTH + j].state =
-          automaton[gameGrid[i * WIDTH + j].state][alive_count];
+      int alive_count = newGrid[i * WIDTH + j].state >> 1;
+      if (automaton[gameGrid[i * WIDTH + j].state & 0x01][alive_count]) {
+
+        setCell(i, j);
+      } else {
+
+        clearCell(i, j);
+      }
     }
   }
-  memcpy(gameGrid, newGrid, sizeof(Cell) * HEIGHT * WIDTH);
 }
 
 void init_grid(bool rand) {
   SetRandomSeed(time(NULL));
   for (size_t i = 0; i < HEIGHT; i++) {
     for (size_t j = 0; j < WIDTH; j++) {
-
-      gameGrid[i * WIDTH + j].state = rand ? (GetRandomValue(0, 1)) : 0;
       gameGrid[i * WIDTH + j].color = MYRED;
+      gameGrid[i * WIDTH + j].state = 0;
+    }
+  }
+  if (rand) {
+    for (size_t i = 0; i < HEIGHT; i++) {
+      for (size_t j = 0; j < WIDTH; j++) {
+        if (GetRandomValue(0, 1)) {
+          setCell(i, j);
+        }
+      }
     }
   }
 }
@@ -166,15 +210,15 @@ int Round(double x) {
 }
 
 void draw_glider(size_t height, size_t width) {
-  gameGrid[(height + 0) * WIDTH + width + 1].state = ALIVE;
+  setCell(height + 0, width + 1);
   gameGrid[(height + 0) * WIDTH + width + 1].color = MYRED;
-  gameGrid[(height + 1) * WIDTH + width + 2].state = ALIVE;
+  setCell(height + 1, width + 2);
   gameGrid[(height + 1) * WIDTH + width + 2].color = MYRED;
-  gameGrid[(height + 2) * WIDTH + width + 0].state = ALIVE;
+  setCell(height + 2, width + 0);
   gameGrid[(height + 2) * WIDTH + width + 0].color = MYRED;
-  gameGrid[(height + 2) * WIDTH + width + 1].state = ALIVE;
+  setCell(height + 2, width + 1);
   gameGrid[(height + 2) * WIDTH + width + 1].color = MYRED;
-  gameGrid[(height + 2) * WIDTH + width + 2].state = ALIVE;
+  setCell(height + 2, width + 2);
   gameGrid[(height + 2) * WIDTH + width + 2].color = MYRED;
 }
 int main() {
@@ -187,7 +231,7 @@ int main() {
   double nowTime = 0;
   double timeBetweenUpdatesSec = 0.25;
   const double slowestUpdateSec = 2.0;
-  const double fastestUpdateSec = 0.020;
+  const double fastestUpdateSec = 0.001;
   const double updateStepSec = 0.040;
   int genNum = 0;
 
@@ -200,10 +244,8 @@ int main() {
   SetConfigFlags(FLAG_WINDOW_UNDECORATED);
   InitWindow(screenWidth, screenHeight, "Game of Life");
   init_grid(false);
-
-  gameGrid[HEIGHT * WIDTH / 2 + WIDTH / 2].state = ALIVE;
-  gameGrid[HEIGHT * WIDTH - 1].state = ALIVE;
-  gameGrid[0].state = ALIVE;
+  setCell(HEIGHT/2, WIDTH/2);
+  setCell(0, 0);
   double penTime = 0;
   Camera2D camera = {0};
   camera.zoom = 1.0f;
@@ -215,23 +257,16 @@ int main() {
       screenWidth = GetScreenWidth();
       screenHeight = GetScreenHeight();
     }
+
     // Update
     // Translate based on mouse right click
     if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
       Vector2 delta = GetMouseDelta();
       delta = Vector2Scale(delta, -1.0f / camera.zoom);
-      //
-      // if (camera.target.y + delta.y + 450 < HEIGHT * CELLSIZE * 0.5 &&
-      //     camera.target.y + delta.y > -HEIGHT * CELLSIZE * 0.5) {
-      camera.target.y += delta.y;
-      // }
-      // if (camera.target.x + delta.x + 450 < WIDTH * CELLSIZE * 0.5 &&
-      //     camera.target.x + delta.x > -WIDTH * CELLSIZE * 0.5) {
-      camera.target.x += delta.x;
-      // }
 
-      // printf("x = %f\n", camera.target.x);
-      // printf("y = %f\n", camera.target.y);
+      camera.target.y += delta.y;
+      camera.target.x += delta.x;
+
     }
 
     if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && IsCursorOnScreen()) {
@@ -239,18 +274,21 @@ int main() {
 
       int x = Floor(mouseWorldPos.x / CELLSIZE);
       int y = Floor(mouseWorldPos.y / CELLSIZE);
-      x += HEIGHT / 2;
-      y += WIDTH / 2;
+      x += WIDTH / 2;
+      y += HEIGHT / 2;
 
-      // printf("x %d\n", x);
-      // printf("y %d\n", y);
-      if (x >= 0 && x < HEIGHT && y >= 0 && y < WIDTH) {
+      if (x >= 0 && x < WIDTH && y >= 0 && y < HEIGHT) {
 
         if (Pen) {
-          gameGrid[x * WIDTH + y].state = ALIVE;
-          gameGrid[x * WIDTH + y].color = MYRED;
-        } else
-          draw_glider(x, y);
+          setCell(y, x);
+          gameGrid[y * WIDTH + x].color = MYRED;
+        } else {
+
+          // clearCell(y, x);
+          draw_glider(y, x);
+
+        }
+
       }
     }
     //
@@ -277,6 +315,16 @@ int main() {
     }
     if (IsKeyPressed(KEY_SPACE) || IsKeyPressedRepeat(KEY_SPACE)) {
       gen();
+      gen();
+      gen();
+      gen();
+      gen();
+      gen();
+      genNum++;
+      genNum++;
+      genNum++;
+      genNum++;
+      genNum++;
       genNum++;
     }
 
@@ -286,11 +334,11 @@ int main() {
       Pen = !Pen;
       break;
     case KEY_R:
-      genNum=0;
+      genNum = 0;
       init_grid(true);
       break;
     case KEY_C:
-      genNum=0;
+      genNum = 0;
       init_grid(false);
       break;
     case KEY_J:
@@ -353,11 +401,12 @@ int main() {
 
       for (int j = windStartY - 1; j <= windEndY; j++) {
 
-        if ((i < -HEIGHT / 2 || j < -WIDTH / 2) ||
-            (i >= HEIGHT / 2 || j >= WIDTH / 2)) {
+        if ((i < -WIDTH / 2 || j < -HEIGHT / 2) ||
+            (i >= WIDTH / 2 || j >= HEIGHT / 2)) {
           continue;
         }
-        switch (gameGrid[(i + HEIGHT / 2) * WIDTH + j + WIDTH / 2].state) {
+        switch (gameGrid[(j + HEIGHT / 2) * WIDTH + i + WIDTH / 2].state &
+                0x01) {
 
         case DEAD:
           DrawRectangle(i * CELLSIZE, j * CELLSIZE, CELLSIZE * grid_lines,
@@ -367,7 +416,7 @@ int main() {
           DrawRectangle(
               i * CELLSIZE, j * CELLSIZE, CELLSIZE * grid_lines,
               CELLSIZE * grid_lines,
-              gameGrid[(i + HEIGHT / 2) * WIDTH + j + WIDTH / 2].color);
+              gameGrid[(j + HEIGHT / 2) * WIDTH + i + WIDTH / 2].color);
 
           break;
         }
@@ -379,8 +428,8 @@ int main() {
     float x = Floor(mouseWorldPos.x / CELLSIZE);
     float y = Floor(mouseWorldPos.y / CELLSIZE);
 
-    if (x >= -HEIGHT / 2.f && x < HEIGHT / 2.f && y >= -WIDTH / 2.f &&
-        y < WIDTH / 2.f) {
+    if (x >= -WIDTH / 2.f && x < WIDTH / 2.f && y >= -HEIGHT / 2.f &&
+        y < HEIGHT / 2.f) {
       DrawRectangle(x * CELLSIZE, y * CELLSIZE, CELLSIZE * 1, CELLSIZE * 1,
                     GRAY);
     }
