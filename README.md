@@ -1,6 +1,12 @@
 # Game_of_life
-a small implementation of Conway's game of life because I was bored 
+a small implementation of a Cellular automaton stimulation engine because I was bored 
 
+## Preview
+
+ ![cool rule](./gifs/cool_evil.gif)
+ ![game of life](./gifs/gol.gif) 
+ ![day and night](./gifs/dayNight.gif)
+ ![more](./gifs/move.gif) 
 ## To-do 
 - [x] actually implement the game of life logic
 - [ ] optimize the logic more
@@ -10,4 +16,3 @@ a small implementation of Conway's game of life because I was bored
 - [x] add more cool Cellular automata
 - [x] add a way to change between the rules and maybe even a way to set your own 
 - [ ] hot reload for development? (Literally no reason other than it's a cool idea)
-- [ ] Record GIF ? And add one to the repo 
