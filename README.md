@@ -2,15 +2,11 @@
 a small implementation of a Cellular Automaton simulation engine, created out of boredom.
 
 ## Preview
+## Preview
 
-<div align="center">
-  <img src="./gifs/cool_evil.gif" alt="Cool Rule" width="300"/>
-  <img src="./gifs/gol.gif" alt="Game of Life" width="300"/>
-</div>
-<div align="center">
-  <img src="./gifs/dayNight.gif" alt="Day and Night" width="300"/>
-  <img src="./gifs/move.gif" alt="More" width="300"/>
-</div>
+|    |       |    |            |
+|-------------------|-------------------|-------------------|-------------------|
+| ![Cool Rule](./gifs/cool_evil.gif) | ![Game of Life](./gifs/gol.gif) | ![Day and Night](./gifs/dayNight.gif) | ![More](./gifs/move.gif) |
 
 ## Features
 
