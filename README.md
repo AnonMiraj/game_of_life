@@ -3,10 +3,14 @@ a small implementation of a Cellular Automaton simulation engine, created out of
 
 ## Preview
 
- ![cool rule](./gifs/cool_evil.gif)
- ![game of life](./gifs/gol.gif) 
- ![day and night](./gifs/dayNight.gif)
- ![more](./gifs/move.gif) 
+<div align="center">
+  <img src="./gifs/cool_evil.gif" alt="Cool Rule" width="300"/>
+  <img src="./gifs/gol.gif" alt="Game of Life" width="300"/>
+</div>
+<div align="center">
+  <img src="./gifs/dayNight.gif" alt="Day and Night" width="300"/>
+  <img src="./gifs/move.gif" alt="More" width="300"/>
+</div>
 
 ## Features
 
