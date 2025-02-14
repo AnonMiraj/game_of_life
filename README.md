@@ -2,7 +2,6 @@
 a small implementation of a Cellular Automaton simulation engine, created out of boredom.
 
 ## Preview
-## Preview
 
 |    |       |    |            |
 |-------------------|-------------------|-------------------|-------------------|
